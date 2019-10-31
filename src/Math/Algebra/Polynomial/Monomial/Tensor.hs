@@ -1,5 +1,5 @@
 
--- | Tensor product of polynomial algebras
+-- | Tensor product (that is, pairs) of monomials
 
 {-# LANGUAGE CPP, BangPatterns, TypeFamilies, UnicodeSyntax #-}
 module Math.Algebra.Polynomial.Monomial.Tensor where

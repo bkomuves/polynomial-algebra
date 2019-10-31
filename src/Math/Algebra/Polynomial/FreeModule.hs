@@ -305,6 +305,11 @@ mulWith' op xx yy = normalize $ sum [ (f x c) | (x,c) <- toList xx ] where
   f !x !c = FreeMod $ Map.fromListWith (+) [ (z, cd) | (y,d) <- ylist , Just z <- [op x y] , let cd = c*d , cd /= 0 ]
   ylist = toList yy
 
+mulWith'' :: (Ord b, Eq c, Num c) => (b -> b -> Maybe (b,c)) -> FreeMod c b -> FreeMod c b -> FreeMod c b
+mulWith'' op xx yy = normalize $ sum [ (f x c) | (x,c) <- toList xx ] where
+  f !x !c = FreeMod $ Map.fromListWith (+) [ (z, cde) | (y,d) <- ylist , Just (z,e) <- [op x y] , let cde = c*d*e , cde /= 0 ]
+  ylist = toList yy
+
 -- | Product, using the given Monoid empty and operation. 
 --
 -- Implementation note: we only use the user-supported 
@@ -316,6 +321,10 @@ productWith empty op xs  = foldl1' (mulWith op) xs
 productWith' :: (Ord b, Eq c, Num c) => b -> (b -> b -> Maybe b) -> [FreeMod c b] -> FreeMod c b
 productWith' empty op []  = generator empty
 productWith' empty op xs  = foldl1' (mulWith' op) xs
+
+productWith'' :: (Ord b, Eq c, Num c) => b -> (b -> b -> Maybe (b,c)) -> [FreeMod c b] -> FreeMod c b
+productWith'' empty op []  = generator empty
+productWith'' empty op xs  = foldl1' (mulWith'' op) xs
 
 -- | Multiplies by a monomial
 mulByMonom :: (Eq c, Num c, Ord b, Monoid b) => b -> FreeMod c b -> FreeMod c b
@@ -410,6 +419,13 @@ unsafeMapMaybeBase :: (Ord a, Ord b) => (a -> Maybe b) -> FreeMod c a -> FreeMod
 unsafeMapMaybeBase f = onFreeMod (Map.fromList . mapMaybe g . Map.toList)
   where
     g (k,x) = case f k of { Just k' -> Just (k',x) ; Nothing -> Nothing }
+
+mapMaybeBaseCoeff :: (Ord a, Ord b, Eq c, Num c) => (a -> Maybe (b,c)) -> FreeMod c a -> FreeMod c b
+mapMaybeBaseCoeff f 
+  = normalize      -- it can happen that we merge a (-1) and (+1) for example ...
+  . onFreeMod (Map.fromListWith (+) . mapMaybe g . Map.toList)
+  where
+    g (k,x) = case f k of { Just (k',y) -> Just (k',x*y) ; Nothing -> Nothing }
 
 -- | NOTE: This is UNSAFE! The user must guarantee that the map respects the invariants!
 onFreeMod :: (Ord a, Ord b) => (Map a c -> Map b c) -> FreeMod c a -> FreeMod c b

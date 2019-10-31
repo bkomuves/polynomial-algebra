@@ -28,9 +28,10 @@ Library
                        Math.Algebra.Polynomial.Monomial.Infinite
                        Math.Algebra.Polynomial.Monomial.Compact
                        Math.Algebra.Polynomial.Monomial.Univariate
-                       Math.Algebra.Polynomial.Monomial.Tensor
                        -- Math.Algebra.Polynomial.Univariate.Dense
                        -- Math.Algebra.Polynomial.Univariate.Sparse
+                       Math.Algebra.Polynomial.Monomial.Tensor
+                       Math.Algebra.Polynomial.Monomial.Exterior.Indexed
                        Math.Algebra.Polynomial.Univariate
                        Math.Algebra.Polynomial.Univariate.Pochhammer
                        Math.Algebra.Polynomial.Univariate.Lagrange
@@ -38,8 +39,8 @@ Library
                        Math.Algebra.Polynomial.Multivariate.Compact
                        Math.Algebra.Polynomial.Multivariate.Indexed
                        Math.Algebra.Polynomial.Multivariate.Infinite
+                       Math.Algebra.Polynomial.Exterior.Indexed
                        -- Math.Algebra.Polynomial.Exterior.Generic
-                       -- Math.Algebra.Polynomial.Exterior.Indexed
                        Math.Algebra.Polynomial.Pretty
                        Math.Algebra.Polynomial.Misc
 

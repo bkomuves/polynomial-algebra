@@ -1,5 +1,5 @@
 
--- | Multivariate polynomials where the variable set 
+-- | Multivariate monomials where the variable set 
 -- looks like @{x_1, x_2, ... , x_N}@ 
 
 {-# LANGUAGE 
@@ -163,11 +163,11 @@ powXS (XS arr) e
 --------------------------------------------------------------------------------
 -- * degree
 
-maxdegXS :: XS v n -> Int
-maxdegXS (XS arr) = maximum (elems arr)
+maxDegXS :: XS v n -> Int
+maxDegXS (XS arr) = maximum (elems arr)
 
-totaldegXS :: XS v n -> Int
-totaldegXS (XS arr) = sum' (elems arr)
+totalDegXS :: XS v n -> Int
+totalDegXS (XS arr) = sum' (elems arr)
 
 --------------------------------------------------------------------------------
 -- * evaluation and substituion
@@ -212,8 +212,8 @@ instance (KnownNat n, KnownSymbol v) => Monomial (XS v n) where
   mulM        = mulXS
   productM    = productXS
   powM        = powXS
-  maxDegM     = maxdegXS              
-  totalDegM   = totaldegXS
+  maxDegM     = maxDegXS              
+  totalDegM   = totalDegXS
   evalM       = evalXS
   varSubsM    = varSubsXS
   termSubsM   = termSubsXS

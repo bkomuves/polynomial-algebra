@@ -80,7 +80,7 @@ instance (Ring c, KnownSymbol v, KnownNat n) => Polynomial (Poly c v n) where
 
   zeroP         = Poly ZMod.zero
   isZeroP       = ZMod.isZero . unPoly
-  oneP          = Poly (ZMod.generator emptyM)
+  oneP          = Poly (ZMod.generator emptyCompact)
 
   fromListP     = Poly . ZMod.fromList
   toListP       = ZMod.toList . unPoly
@@ -101,9 +101,13 @@ instance (Ring c, KnownSymbol v, KnownNat n) => Polynomial (Poly c v n) where
   scaleP        = \s p   -> Poly $ ZMod.scale s (unPoly p) 
 
   evalP         = \g f p -> let { !z = evalM f ; h (!m,!c) = g c * z m } in sum' $ map h $ ZMod.toList $ unPoly p
-  varSubsP      = \f p   -> Poly $ ZMod.mapBase (varSubsM f) (unPoly p)
-  coeffSubsP    = \f p   -> Poly $ ZMod.fromList $ map (termSubsM f) $ ZMod.toList $ unPoly p 
-  subsP         = \f p   -> Poly $ ZMod.flatMap (evalM (unPoly . f)) (unPoly p)
+  --varSubsP      = \f p   -> Poly $ ZMod.mapBase (varSubsCompact f) (unPoly p)
+  --coeffSubsP    = \f p   -> Poly $ ZMod.fromList $ map (termSubsCompact f) $ ZMod.toList $ unPoly p 
+  --subsP         = \f p   -> Poly $ ZMod.flatMap (evalCompact (unPoly . f)) (unPoly p)
+  varSubsP   = error "Compact/varSubsP: not yet implemented"
+  coeffSubsP = error "Compact/coeffSubsP: not yet implemented"
+  subsP      = error "Compact/subsP: not yet implemented"
+  
 
 instance (Ring c, KnownSymbol v, KnownNat n) => Num (Poly c v n) where
   fromInteger = scalarP . fromInteger

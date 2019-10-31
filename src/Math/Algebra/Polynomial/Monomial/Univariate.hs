@@ -1,5 +1,5 @@
 
--- | Univariate polynomials
+-- | Univariate \"monomials\" (basically the natural numbers)
 
 {-# LANGUAGE BangPatterns, DataKinds, KindSignatures, TypeFamilies #-}
 module Math.Algebra.Polynomial.Monomial.Univariate where

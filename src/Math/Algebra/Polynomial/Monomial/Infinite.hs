@@ -1,5 +1,5 @@
 
--- | Multivariate polynomials where the variable set is the countable infinite 
+-- | Multivariate monomials where the variable set is the countable infinite 
 -- set @{x_1, x_2, x_3,... }@ 
 
 {-# LANGUAGE 
@@ -140,11 +140,11 @@ powXInf (XInf arr) e
 
 --------------------------------------------------------------------------------
 
-maxdegXInf :: XInf v -> Int
-maxdegXInf (XInf arr) = maximum arr
+maxDegXInf :: XInf v -> Int
+maxDegXInf (XInf arr) = maximum arr
 
-totaldegXInf :: XInf v -> Int
-totaldegXInf (XInf arr) = sum' arr
+totalDegXInf :: XInf v -> Int
+totalDegXInf (XInf arr) = sum' arr
 
 --------------------------------------------------------------------------------
 
@@ -183,8 +183,8 @@ instance (KnownSymbol v) => Monomial (XInf v) where
   mulM        = mulXInf
   productM    = productXInf
   powM        = powXInf
-  maxDegM     = maxdegXInf              
-  totalDegM   = totaldegXInf
+  maxDegM     = maxDegXInf              
+  totalDegM   = totalDegXInf
   evalM       = evalXInf
   varSubsM    = varSubsXInf
   termSubsM   = termSubsXInf

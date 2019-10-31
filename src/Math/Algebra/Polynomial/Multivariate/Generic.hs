@@ -48,7 +48,7 @@ instance (Ring c, Ord v, Pretty v) => Polynomial (Poly c v) where
 
   zeroP         = Poly ZMod.zero
   isZeroP       = ZMod.isZero . unPoly
-  oneP          = Poly (ZMod.generator emptyM)
+  oneP          = Poly (ZMod.generator emptyMonom)
 
   variableP     = Poly . ZMod.generator . varMonom
   singletonP    = \v e -> Poly (ZMod.generator (singletonMonom v e))
@@ -62,13 +62,13 @@ instance (Ring c, Ord v, Pretty v) => Polynomial (Poly c v) where
   productP      = \ps    -> Poly $ ZMod.productWith emptyMonom mulMonom $ map unPoly ps
 
   coeffOfP      = \m p   -> ZMod.coeffOf m (unPoly p)
-  mulByMonomP   = \m p   -> Poly $ ZMod.mulByMonom  m (unPoly p)
+  mulByMonomP   = \m p   -> Poly $ ZMod.unsafeMulByMonom m (unPoly p)
   scaleP        = \s p   -> Poly $ ZMod.scale s (unPoly p) 
 
   evalP         = \g f p -> let { !z = evalM f ; h (!m,!c) = g c * z m } in sum' $ map h $ ZMod.toList $ unPoly p
-  varSubsP      = \f p   -> Poly $ ZMod.mapBase (varSubsM f) (unPoly p)
-  coeffSubsP    = \f p   -> Poly $ ZMod.fromList $ map (termSubsM f) $ ZMod.toList $ unPoly p 
-  subsP         = \f p   -> Poly $ ZMod.flatMap (evalM (unPoly . f)) (unPoly p)
+  varSubsP      = \f p   -> Poly $ ZMod.mapBase (mapMonom f) (unPoly p)
+  coeffSubsP    = \f p   -> Poly $ ZMod.fromList $ map (termSubsMonom f) $ ZMod.toList $ unPoly p 
+  subsP         = \f p   -> Poly $ ZMod.flatMap (evalMonom (unPoly . f)) (unPoly p)
 
 instance (Ring c, Ord v, Pretty v) => Num (Poly c v) where
   fromInteger = scalarP . fromInteger

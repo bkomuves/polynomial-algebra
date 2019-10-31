@@ -1,5 +1,5 @@
 
--- | Multivariate polynomial algebra where the set of variables is given by 
+-- | Multivariate monomials where the set of variables is given by 
 -- the inhabitants of a type
 
 {-# LANGUAGE CPP, BangPatterns, TypeFamilies, KindSignatures, StandaloneDeriving, FlexibleContexts #-}
@@ -89,11 +89,11 @@ singletonMonom v e
   | e == 0    = emptyMonom
   | otherwise = Monom (Map.singleton v e)
 
-maxdegMonom :: Monom v -> Int
-maxdegMonom (Monom m) = maximum (Map.elems m)
+maxDegMonom :: Monom v -> Int
+maxDegMonom (Monom m) = maximum (Map.elems m)
 
-totaldegMonom :: Monom v -> Int
-totaldegMonom (Monom m) = sum' (Map.elems m)
+totalDegMonom :: Monom v -> Int
+totalDegMonom (Monom m) = sum' (Map.elems m)
 
 evalMonom :: (Num c, Ord v) => (v -> c) -> Monom v -> c
 evalMonom f (Monom m) = foldl' (*) 1 (map g $ Map.toList m) where
@@ -157,8 +157,8 @@ instance (Ord v, Pretty v) => Monomial (Monom v) where
   mulM        = mulMonom
   productM    = prodMonoms
   powM        = powMonom
-  maxDegM     = maxdegMonom              
-  totalDegM   = totaldegMonom
+  maxDegM     = maxDegMonom              
+  totalDegM   = totalDegMonom
   evalM       = evalMonom
   varSubsM    = mapMonom
   termSubsM   = termSubsMonom

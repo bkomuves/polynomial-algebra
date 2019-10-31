@@ -1,5 +1,5 @@
 
--- | Multivariate compact polynomials where the variable set 
+-- | Multivariate compact monomials where the variable set 
 -- looks like @{x_1, x_2, ... , x_N}@, and the exponents are 
 -- a priori known to be at most 255.  
 --
@@ -199,11 +199,11 @@ powCompact (Compact ba) e
 --------------------------------------------------------------------------------
 -- * degree
 
-maxdegCompact :: Compact v n -> Int
-maxdegCompact (Compact ba) = fromIntegral (maxByteArray ba)
+maxDegCompact :: Compact v n -> Int
+maxDegCompact (Compact ba) = fromIntegral (maxByteArray ba)
 
-totaldegCompact :: Compact v n -> Int
-totaldegCompact (Compact ba) = sumByteArray ba
+totalDegCompact :: Compact v n -> Int
+totalDegCompact (Compact ba) = sumByteArray ba
 
 --------------------------------------------------------------------------------
 
@@ -220,8 +220,8 @@ instance (KnownNat n, KnownSymbol v) => Monomial (Compact v n) where
   mulM       = mulCompact
   productM   = productCompact
   powM       = powCompact
-  maxDegM    = maxdegCompact              
-  totalDegM  = totaldegCompact
+  maxDegM    = maxDegCompact              
+  totalDegM  = totalDegCompact
 
 --------------------------------------------------------------------------------
 -- * ByteArray helpers

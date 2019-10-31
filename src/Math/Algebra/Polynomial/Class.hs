@@ -105,7 +105,7 @@ proxyVarM _ = Proxy
 -- * Polynomial rings
 
 -- | The class of polynomial rings
-class (Pretty p, Num p, Ring (CoeffP p), Monomial (MonomP p), VarM (MonomP p) ~ VarP p ) 
+class (Pretty p, Num p, Ring (CoeffP p) {- , Monomial (MonomP p), VarM (MonomP p) ~ VarP p -} ) 
       => Polynomial p where
   -- | Type of coefficients
   type CoeffP p :: *

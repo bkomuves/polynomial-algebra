@@ -79,7 +79,7 @@ instance (Ring c, KnownSymbol v, KnownNat n) => Polynomial (Poly c v n) where
 
   zeroP         = Poly ZMod.zero
   isZeroP       = ZMod.isZero . unPoly
-  oneP          = Poly (ZMod.generator emptyM)
+  oneP          = Poly (ZMod.generator emptyXS)
 
   fromListP     = Poly . ZMod.fromList
   toListP       = ZMod.toList . unPoly
@@ -92,17 +92,17 @@ instance (Ring c, KnownSymbol v, KnownNat n) => Polynomial (Poly c v n) where
   addP          = \p1 p2 -> Poly $ ZMod.add (unPoly p1) (unPoly p2)
   subP          = \p1 p2 -> Poly $ ZMod.sub (unPoly p1) (unPoly p2)
   negP          = Poly . ZMod.neg . unPoly
-  mulP          = \p1 p2 -> Poly $ ZMod.mulWith     mulXS (unPoly p1) (unPoly p2)
+  mulP          = \p1 p2 -> Poly $ ZMod.mulWith mulXS (unPoly p1) (unPoly p2)
 
   coeffOfP      = \m p   -> ZMod.coeffOf m (unPoly p)
   productP      = \ps    -> Poly $ ZMod.productWith emptyXS mulXS $ map unPoly ps
-  mulByMonomP   = \m p   -> Poly $ ZMod.mulByMonom  m (unPoly p)
+  mulByMonomP   = \m p   -> Poly $ ZMod.unsafeMulByMonom m (unPoly p)
   scaleP        = \s p   -> Poly $ ZMod.scale s (unPoly p) 
 
   evalP         = \g f p -> let { !z = evalM f ; h (!m,!c) = g c * z m } in sum' $ map h $ ZMod.toList $ unPoly p
-  varSubsP      = \f p   -> Poly $ ZMod.mapBase (varSubsM f) (unPoly p)
-  coeffSubsP    = \f p   -> Poly $ ZMod.fromList $ map (termSubsM f) $ ZMod.toList $ unPoly p 
-  subsP         = \f p   -> Poly $ ZMod.flatMap (evalM (unPoly . f)) (unPoly p)
+  varSubsP      = \f p   -> Poly $ ZMod.mapBase (varSubsXS f) (unPoly p)
+  coeffSubsP    = \f p   -> Poly $ ZMod.fromList $ map (termSubsXS f) $ ZMod.toList $ unPoly p 
+  subsP         = \f p   -> Poly $ ZMod.flatMap (evalXS (unPoly . f)) (unPoly p)
 
 instance (Ring c, KnownSymbol v, KnownNat n) => Num (Poly c v n) where
   fromInteger = scalarP . fromInteger
@@ -136,16 +136,16 @@ instance (Ring c, KnownSymbol v, KnownNat n) => Ring (Poly c v n) where
 -- you can also decrease, if don't use the last few ones.
 --
 -- This will throw an error if you try to eliminate variables which are in fact used.
--- To do that, you can instead substitute 1 into them.
+-- To do that, you can instead substitute 0 or 1 into them.
 --
 embed :: (Ring c, KnownNat n, KnownNat m) => Poly c v n -> Poly c v m
 embed old@(Poly old_fm) = new where
   n = nOfPoly old
   m = nOfPoly new
   new = Poly $ case compare m n of 
-    LT -> ZMod.mapBase project old_fm
-    EQ -> ZMod.mapBase keep    old_fm
-    GT -> ZMod.mapBase extend  old_fm
+    LT -> ZMod.unsafeMapBase project old_fm
+    EQ -> ZMod.unsafeMapBase keep    old_fm
+    GT -> ZMod.unsafeMapBase extend  old_fm
   extend  (XS arr) = XS $ listArray (1,m) (elems arr ++ replicate (m-n) 0)
   keep    (XS arr) = XS arr
   project (XS arr) = 
