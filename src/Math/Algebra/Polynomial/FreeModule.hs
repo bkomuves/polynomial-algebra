@@ -21,23 +21,30 @@ import Data.Maybe
 import Data.Typeable
 import Data.Proxy
 
+import Control.Monad ( foldM )
+
 import qualified Data.Map.Strict as Map
 import Data.Map.Strict (Map)
 
 import Data.Set (Set)
 
 --------------------------------------------------------------------------------
+-- * Partial monoids
 
--- | Free module over a coefficient ring with the given base. Internally a map
--- storing the coefficients. We maintain the invariant that the coefficients
--- are never zero.
-newtype FreeMod coeff base = FreeMod { unFreeMod :: Map base coeff } deriving (Eq,Ord,Show)
+class PartialMonoid a where
+  pmUnit :: a
+  pmAdd  :: a -> a -> Maybe a
+  pmSum  :: [a] -> Maybe a
 
--- | Free module with integer coefficients
-type ZMod base = FreeMod Integer base
+  pmSum xs  = case xs of { [] -> Just pmUnit ; (y:ys) -> foldM pmAdd y ys }
+  pmAdd x y = pmSum [x,y]
 
--- | Free module with rational coefficients
-type QMod base = FreeMod Rational base
+{- undecidable instance
+instance Monoid a => PartialMonoid a where
+  pmUnit    = mempty
+  pmAdd x y = Just $ mappend x y
+  pmSum xs  = Just $ mconcat xs
+-}
 
 --------------------------------------------------------------------------------
 -- * A type class
@@ -56,7 +63,21 @@ instance FreeModule (FreeMod c b) where
   fromFreeModule = id
 
 --------------------------------------------------------------------------------
--- * support
+-- * Free modules
+
+-- | Free module over a coefficient ring with the given base. Internally a map
+-- storing the coefficients. We maintain the invariant that the coefficients
+-- are never zero.
+newtype FreeMod coeff base = FreeMod { unFreeMod :: Map base coeff } deriving (Eq,Ord,Show)
+
+-- | Free module with integer coefficients
+type ZMod base = FreeMod Integer base
+
+-- | Free module with rational coefficients
+type QMod base = FreeMod Rational base
+
+--------------------------------------------------------------------------------
+-- * Support
 
 -- | Number of terms
 size :: FreeMod c b -> Int
@@ -240,7 +261,7 @@ histogram xs = FreeMod $ foldl' f Map.empty xs where
   f old x = Map.insertWith (+) x 1 old
   
 --------------------------------------------------------------------------------
--- * Rings (at least some simple ones, where the basis form a monoid)
+-- * Rings (at least some simple ones, where the basis form a partial monoid)
 
 -- | The multiplicative unit
 one :: (Monoid b, Num c) => FreeMod c b
@@ -255,16 +276,20 @@ konst c = FreeMod $ if c/=0
 -- | Multiplying two ring elements
 mul :: (Ord b, Monoid b, Eq c, Num c) => FreeMod c b -> FreeMod c b -> FreeMod c b
 mul = mulWith (<>)
-{-
-mul xx yy = sum [ (f x c) | (x,c) <- toList xx ] where
-  f x c = FreeMod $ Map.fromList [ (x<>y, cd) | (y,d) <- ylist , let cd = c*d , cd /= 0 ]
-  ylist = toList yy
--}
+
+-- | Multiplying two ring elements, when the base forms a partial monoid
+mul' :: (Ord b, PartialMonoid b, Eq c, Num c) => FreeMod c b -> FreeMod c b -> FreeMod c b
+mul' = mulWith' (pmAdd)
 
 -- | Product
 product :: (Ord b, Monoid b, Eq c, Num c) => [FreeMod c b] -> FreeMod c b
 product []  = generator mempty
 product xs  = foldl1' mul xs
+
+-- | Product, when the base forms a partial monoid
+product' :: (Ord b, PartialMonoid b, Eq c, Num c) => [FreeMod c b] -> FreeMod c b
+product' []  = generator pmUnit
+product' xs  = foldl1' mul' xs
 
 -- | Multiplying two ring elements, using the given monoid operation on base
 mulWith :: (Ord b, Eq c, Num c) => (b -> b -> b) -> FreeMod c b -> FreeMod c b -> FreeMod c b
@@ -292,9 +317,20 @@ productWith' :: (Ord b, Eq c, Num c) => b -> (b -> b -> Maybe b) -> [FreeMod c b
 productWith' empty op []  = generator empty
 productWith' empty op xs  = foldl1' (mulWith' op) xs
 
+-- | Multiplies by a monomial
+mulByMonom :: (Eq c, Num c, Ord b, Monoid b) => b -> FreeMod c b -> FreeMod c b
+mulByMonom monom = mapBase (mappend monom) 
+
 -- | Multiplies by a monomial (NOTE: we assume that this is an injective operation!!!)
-mulByMonom :: (Ord b, Monoid b) => b -> FreeMod c b -> FreeMod c b
-mulByMonom monom = FreeMod . Map.mapKeys (mappend monom) . unFreeMod
+unsafeMulByMonom :: (Ord b, Monoid b) => b -> FreeMod c b -> FreeMod c b
+unsafeMulByMonom monom = unsafeMapBase (mappend monom)
+
+-- | Multiplies by a partial monomial 
+mulByMonom' :: (Eq c, Num c, Ord b, PartialMonoid b) => b -> FreeMod c b -> FreeMod c b
+mulByMonom' monom = mapMaybeBase (pmAdd monom) 
+
+unsafeMulByMonom' :: (Ord b, PartialMonoid b) => b -> FreeMod c b -> FreeMod c b
+unsafeMulByMonom' monom = unsafeMapMaybeBase (pmAdd monom) 
 
 --------------------------------------------------------------------------------
 -- * Integer \/ Rational conversions
@@ -370,7 +406,7 @@ mapMaybeBase f
     g (k,x) = case f k of { Just k' -> Just (k',x) ; Nothing -> Nothing }
 
 -- | Like 'mapMaybeBase', but the user must guarantee that the @Just@ part of the map is injective!
-unsafeMapMaybeBase :: (Ord a, Ord b, Eq c, Num c) => (a -> Maybe b) -> FreeMod c a -> FreeMod c b
+unsafeMapMaybeBase :: (Ord a, Ord b) => (a -> Maybe b) -> FreeMod c a -> FreeMod c b
 unsafeMapMaybeBase f = onFreeMod (Map.fromList . mapMaybe g . Map.toList)
   where
     g (k,x) = case f k of { Just k' -> Just (k',x) ; Nothing -> Nothing }

@@ -11,6 +11,7 @@ import Math.Algebra.Polynomial.Misc
 import Math.Algebra.Polynomial.Pretty
 
 --------------------------------------------------------------------------------
+-- * Indices
 
 -- | The index of a variable. This will be used as the variable type 
 -- when the set of variables is a continguous set like @{x_1, x_2, ... , x_N}@ 
@@ -25,6 +26,7 @@ instance Pretty Index where
   pretty (Index j) = "x_" ++ show j
 
 --------------------------------------------------------------------------------
+-- * Rings
 
 -- | The class of coefficient rings. 
 --
@@ -50,8 +52,11 @@ instance Ring Integer
 instance Ring Rational
 
 --------------------------------------------------------------------------------
+-- * Monomials
 
 -- | The class of (multivariate) monomials
+-- 
+-- The @Maybe@-s are there to allow truncated and exterior polynomial rings
 class (Pretty m) => Monomial m where
   -- | the type of variables
   type VarM m :: *                          
@@ -97,6 +102,7 @@ proxyVarM :: Monomial m => m -> Proxy (VarM m)
 proxyVarM _ = Proxy
 
 --------------------------------------------------------------------------------
+-- * Polynomial rings
 
 -- | The class of polynomial rings
 class (Pretty p, Num p, Ring (CoeffP p), Monomial (MonomP p), VarM (MonomP p) ~ VarP p ) 
