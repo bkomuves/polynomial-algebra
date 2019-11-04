@@ -181,3 +181,96 @@ safeDiv a b = case divMod a b of
   (q,r) -> error $ "saveDiv: " ++ show a ++ " = " ++ show b ++ " * " ++ show q ++ " + " ++ show r
 
 --------------------------------------------------------------------------------
+-- * Basic number theory
+
+moebiusMu :: Num c => Int -> c
+moebiusMu n 
+  | any (>1) expos       =  0
+  | even (length primes) =  1
+  | otherwise            = -1
+  where
+    factors = groupIntegerFactors $ integerFactorsTrialDivision (fromIntegral n)
+    (primes,expos) = unzip factors
+
+divisors :: Int -> [Int]
+divisors n = [ f tup | tup <- tuples' expos ] where
+  grps = groupIntegerFactors $ integerFactorsTrialDivision $ fromIntegral n
+  (primes,expos) = unzip grps
+  int_ps = map fromInteger primes :: [Int]
+  f es = foldl' (*) 1 $ zipWith (^) int_ps es
+
+-- | Square-free divisors together with their Mobius mu value
+squareFreeDivisors :: Int -> [(Int,Sign)]
+squareFreeDivisors n = map f (sublists int_ps) where
+  grps = groupIntegerFactors $ integerFactorsTrialDivision $ fromIntegral n
+  primes = map fst grps
+  int_ps = map fromInteger primes :: [Int]
+  f ps = ( foldl' (*) 1 ps , if even (length ps) then Plus else Minus)
+
+-- | List of primes, using tree merge with wheel. Code by Will Ness.
+primes :: [Integer]
+primes = 2:3:5:7: gaps 11 wheel (fold3t $ roll 11 wheel primes') where                                                             
+
+  primes' = 11: gaps 13 (tail wheel) (fold3t $ roll 11 wheel primes')
+  fold3t ((x:xs): ~(ys:zs:t)) 
+    = x : union xs (union ys zs) `union` fold3t (pairs t)            
+  pairs ((x:xs):ys:t) = (x : union xs ys) : pairs t 
+  wheel = 2:4:2:4:6:2:6:4:2:4:6:6:2:6:4:2:6:4:6:8:4:2:4:2:  
+          4:8:6:4:6:2:4:6:2:6:6:4:2:4:6:2:6:4:2:4:2:10:2:10:wheel 
+  gaps k ws@(w:t) cs@ ~(c:u) 
+    | k==c  = gaps (k+w) t u              
+    | True  = k : gaps (k+w) t cs  
+  roll k ws@(w:t) ps@ ~(p:u) 
+    | k==p  = scanl (\c d->c+p*d) (p*p) ws : roll (k+w) t u              
+    | True  = roll (k+w) t ps   
+
+  minus xxs@(x:xs) yys@(y:ys) = case compare x y of 
+    LT -> x : minus xs  yys
+    EQ ->     minus xs  ys 
+    GT ->     minus xxs ys
+  minus xs [] = xs
+  minus [] _  = []
+  
+  union xxs@(x:xs) yys@(y:ys) = case compare x y of 
+    LT -> x : union xs  yys
+    EQ -> x : union xs  ys 
+    GT -> y : union xxs ys
+  union xs [] = xs
+  union [] ys =ys
+
+--------------------------------------------------------------------------------
+-- Prime factorization
+
+-- | Groups integer factors. Example: from [2,2,2,3,3,5] we produce [(2,3),(3,2),(5,1)]  
+groupIntegerFactors :: [Integer] -> [(Integer,Int)]
+groupIntegerFactors = map f . group . sort where
+  f xs = (head xs, length xs)
+
+-- | The naive trial division algorithm.
+integerFactorsTrialDivision :: Integer -> [Integer]
+integerFactorsTrialDivision n 
+  | n<1 = error "integerFactorsTrialDivision: n should be at least 1"
+  | otherwise = go primes n 
+  where
+    go _  1 = []
+    go rs k = sub ps k where
+      sub [] k = [k]
+      sub qqs@(q:qs) k = case mod k q of
+        0 -> q : go qqs (div k q)
+        _ -> sub qs k
+      ps = takeWhile (\p -> p*p <= k) rs  
+
+--------------------------------------------------------------------------------
+-- * Basic combinatorics
+
+tuples' :: [Int] -> [[Int]]
+tuples' [] = [[]]
+tuples' (s:ss) = [ x:xs | x <- [0..s] , xs <- tuples' ss ] 
+
+-- | All sublists of a list.
+sublists :: [a] -> [[a]]
+sublists [] = [[]]
+sublists (x:xs) = sublists xs ++ map (x:) (sublists xs)  
+
+--------------------------------------------------------------------------------
+
