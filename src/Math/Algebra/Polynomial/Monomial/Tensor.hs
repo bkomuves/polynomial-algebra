@@ -1,13 +1,16 @@
 
 -- | Tensor product (that is, pairs) of monomials
 
-{-# LANGUAGE CPP, BangPatterns, TypeFamilies, UnicodeSyntax #-}
+{-# LANGUAGE CPP, BangPatterns, TypeFamilies, UnicodeSyntax, KindSignatures, DataKinds #-}
 module Math.Algebra.Polynomial.Monomial.Tensor where
 
 --------------------------------------------------------------------------------
 
 import Data.Typeable
 import Data.Either
+
+import Data.Proxy
+import GHC.TypeLits
 
 #if MIN_VERSION_base(4,11,0)        
 import Data.Semigroup
@@ -21,40 +24,52 @@ import Math.Algebra.Polynomial.Pretty
 
 --------------------------------------------------------------------------------
 
-data Tensor a b = Tensor !a !b deriving (Eq,Ord,Show,Typeable)
+-- | Elementary tensors (basically pairs). The phantom type parameter
+-- @symbol@ is used to render an infix symbol when pretty-printing
+data Tensor (symbol :: Symbol) (a :: *) (b :: *) = Tensor !a !b deriving (Eq,Ord,Show,Typeable)
 
-instance (Semigroup a, Semigroup b) => Semigroup (Tensor a b) where
+instance (Semigroup a, Semigroup b) => Semigroup (Tensor sym a b) where
   (<>) (Tensor x1 y1) (Tensor x2 y2) = Tensor (x1<>x2) (y1<>y2)
   
-instance (Monoid a, Monoid b) => Monoid (Tensor a b) where
+instance (Monoid a, Monoid b) => Monoid (Tensor sym a b) where
   mempty = Tensor mempty mempty
   mappend (Tensor x1 y1) (Tensor x2 y2) = Tensor (x1 `mappend` x2) (y1 `mappend` y2)
 
-instance (Pretty a, Pretty b) => Pretty (Tensor a b) where
-  pretty (Tensor a b) = pretty a ++ " `otimes` " ++ pretty b
+instance (KnownSymbol sym, Pretty a, Pretty b) => Pretty (Tensor sym a b) where
+  pretty t@(Tensor a b) = pretty a ++ tensorSymbol t ++ pretty b
   
+tensorSymbol :: KnownSymbol sym => Tensor sym a b -> String
+tensorSymbol = symbolVal . symProxy where
+  symProxy :: Tensor sym a b -> Proxy sym
+  symProxy _ = Proxy
+
+--------------------------------------------------------------------------------
+
+flip :: Tensor sym a b -> Tensor sym b a
+flip (Tensor x y) = Tensor y x
+
 --------------------------------------------------------------------------------
 -- * Injections
 
-injLeft :: Monoid b => a -> Tensor a b
+injLeft :: Monoid b => a -> Tensor sym a b
 injLeft x = Tensor x mempty
 
-injRight :: Monoid a => b -> Tensor a b
+injRight :: Monoid a => b -> Tensor sym a b
 injRight x = Tensor mempty x
 
 --------------------------------------------------------------------------------
 -- * Projections
 
-projLeft :: Tensor a b -> a
+projLeft :: Tensor sym a b -> a
 projLeft (Tensor x _) = x
 
-projRight :: Tensor a b -> b
+projRight :: Tensor sym a b -> b
 projRight (Tensor _ y) = y
 
 --------------------------------------------------------------------------------
 
-instance (Monomial a, Monomial b) => Monomial (Tensor a b) where
-  type VarM (Tensor a b) = Either (VarM a) (VarM b)
+instance (KnownSymbol sym, Monomial a, Monomial b) => Monomial (Tensor sym a b) where
+  type VarM (Tensor sym a b) = Either (VarM a) (VarM b)
   
   -- checking the invariant
   normalizeM  (Tensor x y) = Tensor (normalizeM x) (normalizeM y)
@@ -80,6 +95,10 @@ instance (Monomial a, Monomial b) => Monomial (Tensor a b) where
   mulM        (Tensor x1 y1) (Tensor x2 y2) = Tensor (mulM x1 x2) (mulM y1 y2)
   productM    tensors = Tensor (productM $ map projLeft tensors) (productM $ map projRight tensors)
   powM        (Tensor x y) k = Tensor (powM x k) (powM y k)
+
+  divM        (Tensor x1 y1) (Tensor x2 y2) = case (divM x1 x2, divM y1 y2) of
+                  (Just z1 , Just z2) -> Just (Tensor z1 z2)
+                  (_       , _      ) -> Nothing
 
   -- degrees
   maxDegM     (Tensor x y) = max (maxDegM x) (maxDegM y)

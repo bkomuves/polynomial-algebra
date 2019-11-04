@@ -74,7 +74,7 @@ type QExtAlg = ExtAlg Rational
 
 --------------------------------------------------------------------------------
 
-instance (Ring c, KnownSymbol v, KnownNat n) => Polynomial (ExtAlg c v n) where
+instance (Ring c, KnownSymbol v, KnownNat n) => AlmostPolynomial (ExtAlg c v n) where
   type CoeffP (ExtAlg c v n) = c
   type MonomP (ExtAlg c v n) = Ext v n
   type VarP   (ExtAlg c v n) = Index
@@ -101,16 +101,13 @@ instance (Ring c, KnownSymbol v, KnownNat n) => Polynomial (ExtAlg c v n) where
   mulByMonomP   = \m p   -> ExtAlg $ ZMod.mapMaybeBaseCoeff (mulExtCoeff m) (unExtAlg p)    -- not injective!!!
   scaleP        = \s p   -> ExtAlg $ ZMod.scale s (unExtAlg p) 
 
+{-
   evalP      = error "ExtAlg/evalP: not implemented"
   varSubsP   = error "ExtAlg/varSubsP: not implemented"
   coeffSubsP = error "ExtAlg/coeffSubsP: not implemented"
   subsP      = error "ExtAlg/subsP: not implemented"
-{-
-  evalP         = \g f p -> let { !z = evalM f ; h (!m,!c) = g c * z m } in sum' $ map h $ ZMod.toList $ unExtAlg p
-  varSubsP      = \f p   -> ExtAlg $ ZMod.mapBase (varSubsExt f) (unExtAlg p)
-  coeffSubsP    = \f p   -> ExtAlg $ ZMod.fromList $ map (termSubsExt f) $ ZMod.toList $ unExtAlg p 
-  subsP         = \f p   -> ExtAlg $ ZMod.flatMap (evalExt (unExtAlg . f)) (unExtAlg p)
 -}
+
 
 instance (Ring c, KnownSymbol v, KnownNat n) => Num (ExtAlg c v n) where
   fromInteger = scalarP . fromInteger

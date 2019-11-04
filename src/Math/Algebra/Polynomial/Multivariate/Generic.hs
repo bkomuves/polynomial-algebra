@@ -17,11 +17,12 @@ import Data.Typeable
 import qualified Data.Map.Strict as Map ; import Data.Map.Strict (Map)
 
 import qualified Math.Algebra.Polynomial.FreeModule as ZMod
+import Math.Algebra.Polynomial.FreeModule ( FreeMod , FreeModule(..) ) -- , ZMod , QMod )
 
 import Math.Algebra.Polynomial.Monomial.Generic 
 
 import Math.Algebra.Polynomial.Class
-import Math.Algebra.Polynomial.FreeModule
+-- import Math.Algebra.Polynomial.FreeModule
 import Math.Algebra.Polynomial.Pretty
 import Math.Algebra.Polynomial.Misc
 
@@ -31,14 +32,18 @@ newtype Poly (coeff :: *) (var :: *)
   = Poly (FreeMod coeff (Monom var) )
   deriving (Eq,Ord,Show,Typeable)
 
--- deriving instance (Ord coeff, Ord var) => Ord (Poly coeff var)
-
 unPoly :: Poly c v -> FreeMod c (Monom v) 
 unPoly (Poly p) = p
 
+instance FreeModule (Poly c v) where
+  type BaseF  (Poly c v) = Monom v
+  type CoeffF (Poly c v) = c
+  toFreeModule   = unPoly
+  fromFreeModule = Poly
+
 --------------------------------------------------------------------------------
 
-instance (Ring c, Ord v, Pretty v) => Polynomial (Poly c v) where
+instance (Ring c, Ord v, Pretty v) => AlmostPolynomial (Poly c v) where
   type CoeffP (Poly c v) = c
   type MonomP (Poly c v) = Monom v
   type VarP   (Poly c v) = v
@@ -65,6 +70,7 @@ instance (Ring c, Ord v, Pretty v) => Polynomial (Poly c v) where
   mulByMonomP   = \m p   -> Poly $ ZMod.unsafeMulByMonom m (unPoly p)
   scaleP        = \s p   -> Poly $ ZMod.scale s (unPoly p) 
 
+instance (Ring c, Ord v, Pretty v) => Polynomial (Poly c v) where
   evalP         = \g f p -> let { !z = evalM f ; h (!m,!c) = g c * z m } in sum' $ map h $ ZMod.toList $ unPoly p
   varSubsP      = \f p   -> Poly $ ZMod.mapBase (mapMonom f) (unPoly p)
   coeffSubsP    = \f p   -> Poly $ ZMod.fromList $ map (termSubsMonom f) $ ZMod.toList $ unPoly p 

@@ -160,6 +160,14 @@ powXS (XS arr) e
   | e == 0    = XS (amap (const 0) arr)
   | otherwise = XS (amap (*e)      arr)
 
+divXS :: KnownNat n => XS v n -> XS v n -> Maybe (XS v n)
+divXS xs1@(XS es) (XS fs) 
+  | all (>=0) gs  = Just (XS $ listArray (1,n) gs)
+  | otherwise     = Nothing
+  where
+    gs = zipWith (-) (elems es) (elems fs) where
+    n  = nOfXS xs1
+
 --------------------------------------------------------------------------------
 -- * degree
 
@@ -210,6 +218,7 @@ instance (KnownNat n, KnownSymbol v) => Monomial (XS v n) where
   variableM   = variableXS
   singletonM  = singletonXS
   mulM        = mulXS
+  divM        = divXS
   productM    = productXS
   powM        = powXS
   maxDegM     = maxDegXS              

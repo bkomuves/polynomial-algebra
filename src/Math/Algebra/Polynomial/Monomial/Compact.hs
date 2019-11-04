@@ -196,6 +196,12 @@ powCompact (Compact ba) e
   | e == 0    = emptyCompact
   | otherwise = Compact $ mapByteArray (*e8) ba where e8 = (fromIntegral e :: Word8)
 
+divCompact :: KnownNat n => Compact v n -> Compact v n -> Maybe (Compact v n)
+divCompact (Compact ba1) (Compact ba2) = 
+  if pwGEByteArrays ba1 ba2 
+    then Just $ Compact (subByteArrays ba1 ba2) 
+    else Nothing
+
 --------------------------------------------------------------------------------
 -- * degree
 
@@ -218,6 +224,7 @@ instance (KnownNat n, KnownSymbol v) => Monomial (Compact v n) where
   variableM  = variableCompact
   singletonM = singletonCompact
   mulM       = mulCompact
+  divM       = divCompact
   productM   = productCompact
   powM       = powCompact
   maxDegM    = maxDegCompact              
@@ -239,6 +246,19 @@ addByteArrays :: ByteArray -> ByteArray -> ByteArray
 addByteArrays ba1 ba2 = ba3 where
   ba3 = byteArrayFromListN n 
           [ indexByteArray ba1 i + (indexByteArray ba2 i :: Word8) | i<-[0..n-1] ]
+  n = sizeofByteArray ba1
+
+-- | We assume that the lengths are the same!
+subByteArrays :: ByteArray -> ByteArray -> ByteArray 
+subByteArrays ba1 ba2 = ba3 where
+  ba3 = byteArrayFromListN n 
+          [ indexByteArray ba1 i - (indexByteArray ba2 i :: Word8) | i<-[0..n-1] ]
+  n = sizeofByteArray ba1
+
+-- | Pointwise greater-or-equal (we assume that the lengths are the same!)
+pwGEByteArrays :: ByteArray -> ByteArray -> Bool 
+pwGEByteArrays ba1 ba2 = and list where
+  list = [ indexByteArray ba1 i >= (indexByteArray ba2 i :: Word8) | i<-[0..n-1] ]
   n = sizeofByteArray ba1
 
 maxByteArray :: ByteArray -> Word8

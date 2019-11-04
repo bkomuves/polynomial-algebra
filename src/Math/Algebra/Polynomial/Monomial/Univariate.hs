@@ -86,6 +86,7 @@ instance KnownSymbol var => Monomial (U var) where
   -- algebra
   mulM         = mappend
   productM     = mconcat
+  divM (U e) (U f) = if e >= f then Just (U (e-f)) else Nothing
   powM (U e) k = U (k*e)
 
   -- degrees

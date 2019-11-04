@@ -9,6 +9,7 @@ import Data.Proxy
 
 import Math.Algebra.Polynomial.Misc
 import Math.Algebra.Polynomial.Pretty
+import Math.Algebra.Polynomial.FreeModule ( FreeModule(..) ) 
 
 --------------------------------------------------------------------------------
 -- * Indices
@@ -76,6 +77,7 @@ class (Pretty m) => Monomial m where
   mulM        :: m -> m -> m                    -- ^ multiplication of monomials
   productM    :: [m] -> m                       -- ^ product of several monomials
   powM        :: m -> Int -> m                  -- ^ raising to a power
+  divM        :: m -> m -> Maybe m              -- ^ division of monomials
   -- degrees
   maxDegM     :: m -> Int                       -- ^ maximum degree
   totalDegM   :: m -> Int                       -- ^ total degree
@@ -104,9 +106,8 @@ proxyVarM _ = Proxy
 --------------------------------------------------------------------------------
 -- * Polynomial rings
 
--- | The class of polynomial rings
-class (Pretty p, Num p, Ring (CoeffP p) {- , Monomial (MonomP p), VarM (MonomP p) ~ VarP p -} ) 
-      => Polynomial p where
+-- | The class of almost polynomial rings
+class (Pretty p, Num p, Ring (CoeffP p))  => AlmostPolynomial p where
   -- | Type of coefficients
   type CoeffP p :: *
   -- | Type of monomials
@@ -138,11 +139,6 @@ class (Pretty p, Num p, Ring (CoeffP p) {- , Monomial (MonomP p), VarM (MonomP p
   mulByMonomP   :: MonomP p -> p -> p
   scaleP        :: CoeffP p -> p -> p 
 
-  evalP         :: Num d => (CoeffP p -> d) -> (VarP p -> d) -> p -> d
-  varSubsP      :: (VarP p -> VarP p) -> p -> p
-  coeffSubsP    :: (VarP p -> Maybe (CoeffP p)) -> p -> p
-  subsP         :: (VarP p -> p) -> p -> p
-
   -- default implementations
 
   sumP     ps = case ps of { [] -> zeroP ; _ -> foldl1' addP ps }
@@ -150,13 +146,23 @@ class (Pretty p, Num p, Ring (CoeffP p) {- , Monomial (MonomP p), VarM (MonomP p
 
 --------------------------------------------------------------------------------
 
-proxyCoeffP :: Polynomial p => p -> Proxy (CoeffP p)
+-- | The class of polynomial rings
+class (AlmostPolynomial p, Monomial (MonomP p), VarM (MonomP p) ~ VarP p) => Polynomial p where
+
+  evalP         :: Num d => (CoeffP p -> d) -> (VarP p -> d) -> p -> d
+  varSubsP      :: (VarP p -> VarP p) -> p -> p
+  coeffSubsP    :: (VarP p -> Maybe (CoeffP p)) -> p -> p
+  subsP         :: (VarP p -> p) -> p -> p
+
+--------------------------------------------------------------------------------
+
+proxyCoeffP :: AlmostPolynomial p => p -> Proxy (CoeffP p)
 proxyCoeffP _ = Proxy
 
-proxyMonomP :: Polynomial p => p -> Proxy (MonomP p)
+proxyMonomP :: AlmostPolynomial p => p -> Proxy (MonomP p)
 proxyMonomP _ = Proxy
 
-proxyVarP :: Polynomial p => p -> Proxy (VarP p)
+proxyVarP :: AlmostPolynomial p => p -> Proxy (VarP p)
 proxyVarP _ = Proxy
 
 --------------------------------------------------------------------------------

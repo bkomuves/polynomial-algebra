@@ -13,7 +13,7 @@
 
 {-# LANGUAGE BangPatterns, TypeFamilies, DataKinds, KindSignatures, ScopedTypeVariables, FlexibleContexts #-}
 module Math.Algebra.Polynomial.Multivariate.Compact 
-  ( Poly(..) , unPoly , polyVar , nOfPoly
+  ( Poly(..) , unPoly , polyVar , nOfPoly , renamePolyVar
   , ZPoly , QPoly
   , Compact
   )
@@ -29,11 +29,12 @@ import Data.Primitive.ByteArray
 import Data.Typeable
 import GHC.TypeLits
 import Data.Proxy
+import Unsafe.Coerce as Unsafe
 
 import Data.Foldable as F 
 
 import qualified Math.Algebra.Polynomial.FreeModule as ZMod
-import Math.Algebra.Polynomial.FreeModule ( FreeMod ) -- , ZMod , QMod )
+import Math.Algebra.Polynomial.FreeModule ( FreeMod , FreeModule(..) ) -- , ZMod , QMod )
 
 import Math.Algebra.Polynomial.Monomial.Compact
 
@@ -66,6 +67,15 @@ nOfPoly = fromInteger . natVal . natProxy where
   natProxy :: Poly c var n -> Proxy n
   natProxy _ = Proxy
 
+instance FreeModule (Poly c v n) where
+  type BaseF  (Poly c v n) = Compact v n
+  type CoeffF (Poly c v n) = c
+  toFreeModule   = unPoly
+  fromFreeModule = Poly
+
+renamePolyVar :: Poly c var1 n -> Poly c var2 n
+renamePolyVar = Unsafe.unsafeCoerce
+
 --------------------------------------------------------------------------------
 
 type ZPoly = Poly Integer
@@ -73,7 +83,7 @@ type QPoly = Poly Rational
 
 --------------------------------------------------------------------------------
 
-instance (Ring c, KnownSymbol v, KnownNat n) => Polynomial (Poly c v n) where
+instance (Ring c, KnownSymbol v, KnownNat n) => AlmostPolynomial (Poly c v n) where
   type CoeffP (Poly c v n) = c
   type MonomP (Poly c v n) = Compact v n
   type VarP   (Poly c v n) = Index
@@ -100,6 +110,7 @@ instance (Ring c, KnownSymbol v, KnownNat n) => Polynomial (Poly c v n) where
   mulByMonomP   = \m p   -> Poly $ ZMod.mulByMonom  m (unPoly p)
   scaleP        = \s p   -> Poly $ ZMod.scale s (unPoly p) 
 
+instance (Ring c, KnownSymbol v, KnownNat n) => Polynomial (Poly c v n) where
   evalP         = \g f p -> let { !z = evalM f ; h (!m,!c) = g c * z m } in sum' $ map h $ ZMod.toList $ unPoly p
   --varSubsP      = \f p   -> Poly $ ZMod.mapBase (varSubsCompact f) (unPoly p)
   --coeffSubsP    = \f p   -> Poly $ ZMod.fromList $ map (termSubsCompact f) $ ZMod.toList $ unPoly p 

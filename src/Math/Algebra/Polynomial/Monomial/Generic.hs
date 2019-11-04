@@ -70,6 +70,16 @@ isEmptyMonom (Monom m) = Map.null m
 mulMonom :: Ord v => Monom v -> Monom v -> Monom v
 mulMonom (Monom m1) (Monom m2) = Monom (Map.unionWith (+) m1 m2)
 
+divMonom :: Ord v => Monom v -> Monom v -> Maybe (Monom v)
+divMonom (Monom m1) (Monom m2) = 
+  if all (>=0) (Map.elems pre_monom) 
+    then Just $ Monom pre_monom
+    else Nothing
+  where
+    minus_m2  = Map.map negate m2
+    pre_monom = Map.filter (/=0) 
+              $ Map.unionWith (+) m1 minus_m2
+
 {-# SPECIALIZE prodMonoms :: Ord v => [Monom v] ->  Monom v #-}
 prodMonoms :: (Foldable f, Ord v) => f (Monom v) -> Monom v
 prodMonoms list = Monom $ Map.unionsWith (+) $ map unMonom $ F.toList list
@@ -155,6 +165,7 @@ instance (Ord v, Pretty v) => Monomial (Monom v) where
   variableM   = varMonom
   singletonM  = singletonMonom
   mulM        = mulMonom
+  divM        = divMonom
   productM    = prodMonoms
   powM        = powMonom
   maxDegM     = maxDegMonom              

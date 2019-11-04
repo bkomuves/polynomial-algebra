@@ -4,7 +4,7 @@
 {-# LANGUAGE BangPatterns, DataKinds, KindSignatures, GeneralizedNewtypeDeriving, TypeFamilies #-}
 module Math.Algebra.Polynomial.Univariate
   ( -- * Univariate polynomials
-    Univariate(..) , unUni 
+    Univariate(..) , unUni , uniVar , renameUniVar
   , ZUni , QUni
   , U(..)
   )
@@ -17,13 +17,14 @@ import Data.List
 
 import GHC.TypeLits
 import Data.Proxy
+import Unsafe.Coerce as Unsafe
 
 import Math.Algebra.Polynomial.Class
 import Math.Algebra.Polynomial.Misc
 import Math.Algebra.Polynomial.Pretty
 
 import qualified Math.Algebra.Polynomial.FreeModule as ZMod
-import Math.Algebra.Polynomial.FreeModule ( FreeMod , ZMod , QMod )
+import Math.Algebra.Polynomial.FreeModule ( FreeMod , FreeModule(..) , ZMod , QMod )
 
 import Math.Algebra.Polynomial.Monomial.Univariate
 
@@ -44,10 +45,25 @@ type ZUni var = Univariate Integer var
 -- | An univariate polynomial with rational coefficients
 type QUni var = Univariate Rational var
 
+instance FreeModule (Univariate c v) where
+  type BaseF  (Univariate c v) = U v 
+  type CoeffF (Univariate c v) = c
+  toFreeModule   = unUni
+  fromFreeModule = Uni
+
+-- | Name of the variable
+uniVar :: KnownSymbol var => Univariate c var -> String
+uniVar = symbolVal . varProxy where
+  varProxy :: Univariate c var -> Proxy var
+  varProxy _ = Proxy
+
+renameUniVar :: Univariate c var1 -> Univariate c var2
+renameUniVar = Unsafe.unsafeCoerce
+
 --------------------------------------------------------------------------------
 
-instance (Ring coeff, KnownSymbol var) => Polynomial (Univariate coeff var) where
-
+instance (Ring coeff, KnownSymbol var) => AlmostPolynomial (Univariate coeff var) where
+                                          
   type CoeffP (Univariate coeff var) = coeff
   type MonomP (Univariate coeff var) = U var
   type VarP   (Univariate coeff var) = ()
@@ -74,6 +90,7 @@ instance (Ring coeff, KnownSymbol var) => Polynomial (Univariate coeff var) wher
   mulByMonomP   = \m p   -> Uni $ ZMod.mulByMonom  m (unUni p)
   scaleP        = \s p   -> Uni $ ZMod.scale s (unUni p) 
 
+instance (Ring coeff, KnownSymbol var) => Polynomial (Univariate coeff var) where
   evalP         = \g f p -> let { !z = evalM f ; h (!m,!c) = g c * z m } in sum' $ map h $ ZMod.toList $ unUni p
   varSubsP      = \f p   -> Uni $ ZMod.mapBase (varSubsM f) (unUni p)
   coeffSubsP    = \f p   -> Uni $ ZMod.fromList $ map (termSubsM f) $ ZMod.toList $ unUni p 

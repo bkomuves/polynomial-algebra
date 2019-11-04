@@ -91,6 +91,13 @@ mulXInf (XInf es) (XInf fs) = XInf $ longZipWith id id (+) es fs
 productXInf :: (Foldable f) => f (XInf v) -> XInf v
 productXInf = F.foldl' mulXInf emptyXInf 
 
+divXInf :: XInf v -> XInf v -> Maybe (XInf v)
+divXInf xs1@(XInf es) (XInf fs) 
+  | all (>=0) gs  = Just (XInf gs)
+  | otherwise     = Nothing
+  where
+    gs = longZipWith id negate (-) es fs where
+
 --------------------------------------------------------------------------------
 
 xInfFromList :: [(Index,Int)] -> XInf v
@@ -181,6 +188,7 @@ instance (KnownSymbol v) => Monomial (XInf v) where
   variableM   = variableXInf
   singletonM  = singletonXInf
   mulM        = mulXInf
+  divM        = divXInf
   productM    = productXInf
   powM        = powXInf
   maxDegM     = maxDegXInf              
