@@ -61,6 +61,13 @@ longZipWith f g h = go where
   go xs     []     = map f xs
   go []     ys     = map g ys
 
+longReplaceListElem :: a -> Int -> a -> [a] -> [a]
+longReplaceListElem x0 j y xs = go j xs  where
+  go  0 (x:xs) = y  : xs
+  go !i (x:xs) = x  : go (i-1) xs
+  go  0 []     = y  : []
+  go !i []     = x0 : go (i-1) []
+
 --------------------------------------------------------------------------------
 -- * Maps
   

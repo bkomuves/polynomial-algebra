@@ -176,6 +176,20 @@ termSubsXInf f (xinf, c0) = (xInfFromList list, c1) where
       Nothing -> ((v,e):old , c)
   
 --------------------------------------------------------------------------------
+-- * differentiation
+ 
+diffXInf :: Num c => Index -> Int -> XInf v -> Maybe (XInf v, c)
+diffXInf _         0 xinf      = Just (xinf,1)
+diffXInf (Index j) k (XInf es) =
+  if k > m 
+    then Nothing
+    else Just (XInf es' , fromInteger c) 
+  where
+    m    = (es ++ repeat 0) !! (j-1)
+    es'  = longReplaceListElem 0 (j-1) (m-k) es
+    c    = product [ fromIntegral (m-i) | i<-[0..k-1] ] :: Integer
+
+--------------------------------------------------------------------------------
 
 instance (KnownSymbol v) => Monomial (XInf v) where
   type VarM (XInf v) = Index
@@ -191,6 +205,7 @@ instance (KnownSymbol v) => Monomial (XInf v) where
   divM        = divXInf
   productM    = productXInf
   powM        = powXInf
+  diffM       = diffXInf
   maxDegM     = maxDegXInf              
   totalDegM   = totalDegXInf
   evalM       = evalXInf

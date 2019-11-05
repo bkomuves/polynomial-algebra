@@ -93,6 +93,8 @@ class (Pretty m) => Monomial m where
   productM    :: [m] -> m                       -- ^ product of several monomials
   powM        :: m -> Int -> m                  -- ^ raising to a power
   divM        :: m -> m -> Maybe m              -- ^ division of monomials
+  -- calculus
+  diffM       :: Num c => VarM m -> Int -> m -> Maybe (m,c)       -- ^ differentiation
   -- degrees
   maxDegM     :: m -> Int                       -- ^ maximum degree
   totalDegM   :: m -> Int                       -- ^ total degree
@@ -131,19 +133,23 @@ class (Pretty p, Ring (CoeffP p), FreeModule p, CoeffP p ~ CoeffF p, MonomP p ~ 
   -- | Type of variables
   type VarP   p :: *
 
+  -- conversion
   fromListP     :: [(MonomP p, CoeffP p)] -> p       -- ^ construction from @(variable,exponent)@ pairs
   toListP       :: p -> [(MonomP p, CoeffP p)]       -- ^ extracting @(variable,exponent)@ pairs
 
+  -- zero, one
   zeroP         :: p
   isZeroP       :: p -> Bool
   oneP          :: p
 
+  -- construction
   variableP     :: VarP p        -> p                -- ^ a single variable
   singletonP    :: VarP p -> Int -> p                -- ^ a single variable raised to a power
   monomP        :: MonomP p -> p
   monomP'       :: MonomP p -> CoeffP p -> p
   scalarP       :: CoeffP p -> p
 
+  -- algebra
   addP          :: p -> p -> p
   subP          :: p -> p -> p
   negP          :: p -> p 

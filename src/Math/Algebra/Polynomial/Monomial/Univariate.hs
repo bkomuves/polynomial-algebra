@@ -93,11 +93,25 @@ instance KnownSymbol var => Monomial (U var) where
   maxDegM     (U e) = e
   totalDegM   (U e) = e
 
+  -- calculus
+  diffM _ = diffU
+
   -- substitution and evaluation
   evalM       f (U e) = (f ())^e
   varSubsM    _ = id
   termSubsM   f (U e, c) = case f () of  
                 Nothing  -> (U e, c      )
                 (Just x) -> (U 0, c * x^e)
+
+--------------------------------------------------------------------------------
+-- * differentiation
+
+diffU :: Num c => Int -> U v -> Maybe (U v, c)
+diffU k (U m) =
+  if k > m 
+    then Nothing
+    else Just (U (m-k) , fromInteger c) 
+  where
+    c = product [ fromIntegral (m-i) | i<-[0..k-1] ] :: Integer
 
 --------------------------------------------------------------------------------

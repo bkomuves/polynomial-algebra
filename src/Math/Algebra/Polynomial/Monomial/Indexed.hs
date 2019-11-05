@@ -203,7 +203,21 @@ termSubsXS f (xs@(XS arr) , c0) = (XS arr', c0*proj) where
   g !s (!j,!e) = case f (Index j) of
     Nothing     -> (s       , Just (j,e) )
     Just c      -> (s * c^e , Nothing    )
-  
+ 
+--------------------------------------------------------------------------------
+-- * differentiation
+
+diffXS :: Num c => Index -> Int -> XS v n -> Maybe (XS v n, c)
+diffXS _         0 xs          = Just (xs,1)
+diffXS (Index j) k xs@(XS arr) =
+  if k > m 
+    then Nothing
+    else Just (XS arr' , fromInteger c) 
+  where
+    m    = arr!j
+    arr' = arr // [(j,m-k)]
+    c    = product [ fromIntegral (m-i) | i<-[0..k-1] ] :: Integer
+
 --------------------------------------------------------------------------------
 
 instance (KnownNat n, KnownSymbol v) => Monomial (XS v n) where
@@ -222,6 +236,7 @@ instance (KnownNat n, KnownSymbol v) => Monomial (XS v n) where
   powM        = powXS
   maxDegM     = maxDegXS              
   totalDegM   = totalDegXS
+  diffM       = diffXS
   evalM       = evalXS
   varSubsM    = varSubsXS
   termSubsM   = termSubsXS

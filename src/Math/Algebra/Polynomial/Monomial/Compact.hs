@@ -211,6 +211,25 @@ totalDegCompact :: Compact v n -> Int
 totalDegCompact (Compact ba) = sumByteArray ba
 
 --------------------------------------------------------------------------------
+-- * differentiation
+
+diffCompact :: Num c => Index -> Int -> Compact v n -> Maybe (Compact v n, c)
+diffCompact _         0 cpt          = Just (cpt,1)
+diffCompact (Index j) k (Compact ba) =
+  if k8 > m8
+    then Nothing
+    else Just (Compact ba' , fromInteger c) 
+  where
+    k8   = fromIntegral k :: Word8
+    m8   = indexByteArray ba (j-1) :: Word8
+    m    = fromIntegral m8 :: Int
+    ba'  = byteArrayFromList $ change $ byteArrayToList ba
+    c    = product [ fromIntegral (m - i) | i<-[0..k-1] ] :: Integer
+    change = go 1 where
+      go i (x:xs) = if i == j then (x-k8) : xs else x : go (i+1) xs
+      go i []     = [] 
+
+--------------------------------------------------------------------------------
 
 instance (KnownNat n, KnownSymbol v) => Monomial (Compact v n) where
   type VarM (Compact v n) = Index
@@ -225,9 +244,10 @@ instance (KnownNat n, KnownSymbol v) => Monomial (Compact v n) where
   mulM       = mulCompact
   divM       = divCompact
   productM   = productCompact
-  powM       = powCompact
+  powM       = powCompact 
   maxDegM    = maxDegCompact              
   totalDegM  = totalDegCompact
+  diffM      = diffCompact
  
   evalM      = error "Compact/evalM: not yet implemented"
   varSubsM   = error "Compact/varSubsM: not yet implemented"

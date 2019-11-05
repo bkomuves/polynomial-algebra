@@ -67,6 +67,18 @@ projRight :: Tensor sym a b -> b
 projRight (Tensor _ y) = y
 
 --------------------------------------------------------------------------------
+-- * differentiation
+ 
+diffTensor :: (Monomial a, Monomial b, Num c) => Either (VarM a) (VarM b) -> Int -> Tensor sym a b -> Maybe (Tensor sym a b, c)
+diffTensor ei k (Tensor left right) = case ei of
+  Left v  -> case diffM v k left of
+    Just (left' ,c) -> Just (Tensor left' right , c)
+    Nothing         -> Nothing
+  Right v -> case diffM v k right of
+    Just (right',c) -> Just (Tensor left  right', c)
+    Nothing         -> Nothing
+
+--------------------------------------------------------------------------------
 
 instance (KnownSymbol sym, Monomial a, Monomial b) => Monomial (Tensor sym a b) where
   type VarM (Tensor sym a b) = Either (VarM a) (VarM b)
@@ -99,6 +111,9 @@ instance (KnownSymbol sym, Monomial a, Monomial b) => Monomial (Tensor sym a b) 
   divM        (Tensor x1 y1) (Tensor x2 y2) = case (divM x1 x2, divM y1 y2) of
                   (Just z1 , Just z2) -> Just (Tensor z1 z2)
                   (_       , _      ) -> Nothing
+
+  -- calculus
+  diffM = diffTensor
 
   -- degrees
   maxDegM     (Tensor x y) = max (maxDegM x) (maxDegM y)

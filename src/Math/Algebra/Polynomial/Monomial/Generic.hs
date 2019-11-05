@@ -22,7 +22,7 @@ import Data.List.NonEmpty ( NonEmpty )
 import Data.Monoid
 #endif
 
-import qualified Data.Map.Strict as Map ; import Data.Map.Strict (Map)
+import Data.Map.Strict (Map) ; import qualified Data.Map.Strict as Map 
 
 import Math.Algebra.Polynomial.Class
 import Math.Algebra.Polynomial.FreeModule
@@ -119,6 +119,20 @@ termSubsMonom f (Monom m , c0) = (Monom m' , c0*proj) where
     Just c      -> ( s * c^e , Nothing    )
 
 --------------------------------------------------------------------------------
+-- * differentiation
+
+diffMonom :: (Ord v, Num c) => v -> Int -> Monom v -> Maybe (Monom v, c)
+diffMonom _ 0 mon           = Just (mon,1)
+diffMonom v k (Monom table) =
+  if k > m 
+    then Nothing
+    else Just (Monom table' , fromInteger c) 
+  where
+    m      = Map.findWithDefault 0 v table
+    table' = Map.insert v (m-k) table
+    c      = Data.List.product [ fromIntegral (m-i) | i<-[0..k-1] ] :: Integer
+
+--------------------------------------------------------------------------------
 
 -- Semigroup became a superclass of Monoid
 #if MIN_VERSION_base(4,11,0)        
@@ -170,6 +184,7 @@ instance (Ord v, Pretty v) => Monomial (Monom v) where
   powM        = powMonom
   maxDegM     = maxDegMonom              
   totalDegM   = totalDegMonom
+  diffM       = diffMonom
   evalM       = evalMonom
   varSubsM    = mapMonom
   termSubsM   = termSubsMonom
