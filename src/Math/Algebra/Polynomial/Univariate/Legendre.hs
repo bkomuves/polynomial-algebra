@@ -1,14 +1,13 @@
 
--- | Chebysev polynomials
+-- | Legendre polynomials
+--
+-- See <https://en.wikipedia.org/wiki/Legendre_polynomials>
 -- 
--- See <https://en.wikipedia.org/wiki/Chebyshev_polynomials>
 
 {-# LANGUAGE DataKinds, TypeSynonymInstances, FlexibleContexts, FlexibleInstances, BangPatterns, ScopedTypeVariables #-}
-module Math.Algebra.Polynomial.Univariate.Chebysev
-  ( chebysevT
-  , chebysevU
-  , integralChebysevT 
-  , integralChebysevU
+module Math.Algebra.Polynomial.Univariate.Legendre
+  ( legendreP
+  , rationalLegendreP
   ) 
   where
 
@@ -33,31 +32,24 @@ import Math.Algebra.Polynomial.Misc
 
 --------------------------------------------------------------------------------
 
-chebysevT :: (Ring c, KnownSymbol v) => Int -> Univariate c v
-chebysevT = fromZUni . renameUniVar . integralChebysevT
-
-chebysevU :: (Ring c, KnownSymbol v) => Int -> Univariate c v
-chebysevU = fromZUni . renameUniVar . integralChebysevU
+-- | Legendre polynomials
+legendreP :: (Field c, KnownSymbol v) => Int -> Univariate c v
+legendreP = fromQUni . renameUniVar . rationalLegendreP
 
 --------------------------------------------------------------------------------
 
-x, twox :: Univariate Integer "x"
-x    = variableP ()
-twox = monomP'   (U 1) 2
+x :: Univariate Rational "x"
+x = variableP ()
 
-integralChebysevT :: Int -> Univariate Integer "x"
-integralChebysevT = intCache compute where
+rationalLegendreP :: Int -> Univariate Rational "x"
+rationalLegendreP = intCache compute where
+  fi = (fromIntegral :: Int -> Rational)
   compute recur n = case n of 
     0 -> 1
     1 -> x
-    n -> twox * recur (n-1) - recur (n-2)
-
-integralChebysevU :: Int -> Univariate Integer "x"
-integralChebysevU = intCache compute where
-  compute recur n = case n of 
-    0 -> 1
-    1 -> twox
-    n -> twox * recur (n-1) - recur (n-2)
+    n -> scaleP (1 / fi n) 
+       $ scaleP (fi $ 2*n-1) (x * recur (n-1)) 
+       - scaleP (fi $   n-1) (    recur (n-2))
 
 --------------------------------------------------------------------------------
 

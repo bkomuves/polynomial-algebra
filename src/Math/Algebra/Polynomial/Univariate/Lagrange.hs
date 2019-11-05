@@ -1,5 +1,7 @@
 
 -- | Lagrange interpolation
+--
+-- See <https://en.wikipedia.org/wiki/Lagrange_polynomial>
 
 {-# LANGUAGE BangPatterns, DataKinds, KindSignatures, GeneralizedNewtypeDeriving, TypeFamilies #-}
 module Math.Algebra.Polynomial.Univariate.Lagrange where

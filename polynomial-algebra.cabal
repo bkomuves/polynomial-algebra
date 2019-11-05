@@ -37,6 +37,8 @@ Library
                        Math.Algebra.Polynomial.Univariate.Lagrange
                        Math.Algebra.Polynomial.Univariate.Cyclotomic
                        Math.Algebra.Polynomial.Univariate.Chebysev
+                       Math.Algebra.Polynomial.Univariate.Hermite
+                       Math.Algebra.Polynomial.Univariate.Legendre
                        Math.Algebra.Polynomial.Multivariate.Generic
                        Math.Algebra.Polynomial.Multivariate.Compact
                        Math.Algebra.Polynomial.Multivariate.Indexed

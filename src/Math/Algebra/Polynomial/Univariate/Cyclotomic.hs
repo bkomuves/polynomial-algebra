@@ -1,6 +1,8 @@
 
 -- | Cyclotomic polynomials
 -- 
+-- See <https://en.wikipedia.org/wiki/Cyclotomic_polynomial>
+--
 
 {-# LANGUAGE DataKinds, TypeSynonymInstances, FlexibleContexts, FlexibleInstances, BangPatterns, ScopedTypeVariables #-}
 module Math.Algebra.Polynomial.Univariate.Cyclotomic 
