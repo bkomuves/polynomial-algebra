@@ -4,8 +4,8 @@
 -- This module should be imported qualified.
 
 {-# LANGUAGE 
-      BangPatterns, FlexibleInstances, TypeSynonymInstances, ConstraintKinds, KindSignatures,
-      TypeFamilies
+      BangPatterns, FlexibleContexts, FlexibleInstances, TypeSynonymInstances, TypeFamilies,
+      ConstraintKinds, KindSignatures
   #-}
 module Math.Algebra.Polynomial.FreeModule where
 
@@ -50,13 +50,13 @@ instance Monoid a => PartialMonoid a where
 -- * A type class
 
 -- | The reason for this type class is to make using newtype wrappers more convenient
-class FreeModule a where
+class (Ord (BaseF a)) => FreeModule a where
   type BaseF  a :: *
   type CoeffF a :: *
   toFreeModule   :: a -> FreeMod (CoeffF a) (BaseF a)
   fromFreeModule :: FreeMod (CoeffF a) (BaseF a) -> a
 
-instance FreeModule (FreeMod c b) where
+instance Ord b => FreeModule (FreeMod c b) where
   type BaseF  (FreeMod c b) = b
   type CoeffF (FreeMod c b) = c
   toFreeModule   = id

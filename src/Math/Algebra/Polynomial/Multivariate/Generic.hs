@@ -35,7 +35,7 @@ newtype Poly (coeff :: *) (var :: *)
 unPoly :: Poly c v -> FreeMod c (Monom v) 
 unPoly (Poly p) = p
 
-instance FreeModule (Poly c v) where
+instance Ord v => FreeModule (Poly c v) where
   type BaseF  (Poly c v) = Monom v
   type CoeffF (Poly c v) = c
   toFreeModule   = unPoly
@@ -58,6 +58,7 @@ instance (Ring c, Ord v, Pretty v) => AlmostPolynomial (Poly c v) where
   variableP     = Poly . ZMod.generator . varMonom
   singletonP    = \v e -> Poly (ZMod.generator (singletonMonom v e))
   monomP        = \m     -> Poly $ ZMod.generator m
+  monomP'       = \m c   -> Poly $ ZMod.singleton m c
   scalarP       = \s     -> Poly $ ZMod.singleton emptyMonom s
 
   addP          = \p1 p2 -> Poly $ ZMod.add (unPoly p1) (unPoly p2)

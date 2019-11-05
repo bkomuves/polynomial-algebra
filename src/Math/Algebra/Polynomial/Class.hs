@@ -107,7 +107,8 @@ proxyVarM _ = Proxy
 -- * Polynomial rings
 
 -- | The class of almost polynomial rings
-class (Pretty p, Num p, Ring (CoeffP p))  => AlmostPolynomial p where
+class (Pretty p, Num p, Ring (CoeffP p), FreeModule p, CoeffP p ~ CoeffF p, MonomP p ~ BaseF p) => AlmostPolynomial p where
+
   -- | Type of coefficients
   type CoeffP p :: *
   -- | Type of monomials
@@ -125,6 +126,7 @@ class (Pretty p, Num p, Ring (CoeffP p))  => AlmostPolynomial p where
   variableP     :: VarP p        -> p                -- ^ a single variable
   singletonP    :: VarP p -> Int -> p                -- ^ a single variable raised to a power
   monomP        :: MonomP p -> p
+  monomP'       :: MonomP p -> CoeffP p -> p
   scalarP       :: CoeffP p -> p
 
   addP          :: p -> p -> p

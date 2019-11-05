@@ -78,6 +78,7 @@ instance (Ring coeff, KnownSymbol var) => AlmostPolynomial (Univariate coeff var
   variableP     = Uni . ZMod.generator . variableM
   singletonP    = \v e -> Uni (ZMod.generator (singletonM v e))
   monomP        = \m     -> Uni $ ZMod.generator m
+  monomP'       = \m c   -> Uni $ ZMod.singleton m c
   scalarP       = \s     -> Uni $ ZMod.singleton emptyM s
 
   addP          = \p1 p2 -> Uni $ ZMod.add (unUni p1) (unUni p2)

@@ -98,6 +98,7 @@ instance (Ring c, KnownSymbol v, KnownNat n) => AlmostPolynomial (Poly c v n) wh
   variableP     = Poly . ZMod.generator . variableCompact
   singletonP    = \v e -> Poly (ZMod.generator (singletonCompact v e))
   monomP        = \m     -> Poly $ ZMod.generator m
+  monomP'       = \m c   -> Poly $ ZMod.singleton m c
   scalarP       = \s     -> Poly $ ZMod.singleton emptyCompact s
 
   addP          = \p1 p2 -> Poly $ ZMod.add (unPoly p1) (unPoly p2)

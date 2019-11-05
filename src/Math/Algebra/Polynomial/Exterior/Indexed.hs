@@ -30,7 +30,7 @@ import Data.Proxy
 import Data.Foldable as F 
 
 import qualified Math.Algebra.Polynomial.FreeModule as ZMod
-import Math.Algebra.Polynomial.FreeModule ( FreeMod ) -- , ZMod , QMod )
+import Math.Algebra.Polynomial.FreeModule ( FreeMod , FreeModule(..) ) -- , ZMod , QMod )
 
 import Math.Algebra.Polynomial.Monomial.Exterior.Indexed 
 
@@ -50,8 +50,6 @@ newtype ExtAlg (coeff :: *) (var :: Symbol) (n :: Nat)
   = ExtAlg (FreeMod coeff (Ext var n))
   deriving (Eq,Ord,Show,Typeable)
 
--- deriving instance (Ord coeff) => Ord (ExtAlg coeff var n)
-
 unExtAlg :: ExtAlg c v n -> FreeMod c (Ext v n) 
 unExtAlg (ExtAlg p) = p
 
@@ -66,6 +64,12 @@ nOfExtAlg :: KnownNat n => ExtAlg c var n -> Int
 nOfExtAlg = fromInteger . natVal . natProxy where
   natProxy :: ExtAlg c var n -> Proxy n
   natProxy _ = Proxy
+
+instance FreeModule (ExtAlg c v n) where
+  type BaseF  (ExtAlg c v n) = Ext v n
+  type CoeffF (ExtAlg c v n) = c
+  toFreeModule   = unExtAlg
+  fromFreeModule = ExtAlg
 
 --------------------------------------------------------------------------------
 
@@ -89,6 +93,7 @@ instance (Ring c, KnownSymbol v, KnownNat n) => AlmostPolynomial (ExtAlg c v n) 
   variableP     = ExtAlg . ZMod.generator . variableExt
   singletonP    = error "ExtAlg/singletonP: not implemented (because it is meaningless)"
   monomP        = \m     -> ExtAlg $ ZMod.generator m
+  monomP'       = \m c   -> ExtAlg $ ZMod.singleton m c
   scalarP       = \s     -> ExtAlg $ ZMod.singleton emptyExt s
 
   addP          = \p1 p2 -> ExtAlg $ ZMod.add (unExtAlg p1) (unExtAlg p2)

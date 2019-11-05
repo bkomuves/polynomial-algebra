@@ -26,6 +26,15 @@ import Math.Algebra.Polynomial.Monomial.Univariate ( U(..) )
 import Math.Algebra.Polynomial.Univariate
 
 --------------------------------------------------------------------------------
+-- * Rising and Falling factorials
+
+risingFactorial :: Int -> Univariate Integer "x"
+risingFactorial n = expandRisingFactorial (RF n)
+
+fallingFactorial :: Int -> Univariate Integer "x"
+fallingFactorial n = expandFallingFactorial (FF n)
+
+--------------------------------------------------------------------------------
 -- * Polynomials using rising or falling factorials as bases
 
 -- | Univariate polynomials using /rising factorials/ as a basis function
@@ -41,7 +50,7 @@ expandFallingPoly :: (KnownSymbol var, Typeable c, Eq c, Num c) => FreeMod c Fal
 expandFallingPoly = Uni . ZMod.flatMap (unUni . expandFallingFactorial)
 
 --------------------------------------------------------------------------------
--- * Rising and falling factorials 
+-- * Rising and falling factorial types
 
 -- | Rising factorial @x^(k) = x(x+1)(x+2)...(x+k-1)@
 newtype RisingF = RF Int deriving (Eq,Ord,Show)
