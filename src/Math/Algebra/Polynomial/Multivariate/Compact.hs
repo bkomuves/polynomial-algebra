@@ -14,7 +14,7 @@
 {-# LANGUAGE BangPatterns, TypeFamilies, DataKinds, KindSignatures, ScopedTypeVariables, FlexibleContexts #-}
 module Math.Algebra.Polynomial.Multivariate.Compact 
   ( Poly(..) , unPoly , polyVar , nOfPoly , renamePolyVar
-  , ZPoly , QPoly
+  , ZPoly , QPoly , fromZPoly, fromQPoly
   , Compact
   )
   where
@@ -73,6 +73,7 @@ instance FreeModule (Poly c v n) where
   toFreeModule   = unPoly
   fromFreeModule = Poly
 
+-- | Rename the variables (zero cost)
 renamePolyVar :: Poly c var1 n -> Poly c var2 n
 renamePolyVar = Unsafe.unsafeCoerce
 
@@ -80,6 +81,14 @@ renamePolyVar = Unsafe.unsafeCoerce
 
 type ZPoly = Poly Integer
 type QPoly = Poly Rational
+
+-- | Change the coefficient ring (from integers)
+fromZPoly :: (Ring c, KnownSymbol v, KnownNat n) => Poly Integer v n -> Poly c v n
+fromZPoly= Poly . ZMod.fromZMod . unPoly
+
+-- | Change the coefficient field (from rationals)
+fromQPoly :: (Field c, KnownSymbol v, KnownNat n) => Poly Rational v n -> Poly c v n
+fromQPoly = Poly . ZMod.fromQMod . unPoly
 
 --------------------------------------------------------------------------------
 

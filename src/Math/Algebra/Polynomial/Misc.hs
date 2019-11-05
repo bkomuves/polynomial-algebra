@@ -1,5 +1,5 @@
 
--- | Some auxilary functions
+-- | Some auxilary functions used internally
 
 {-# LANGUAGE CPP, BangPatterns, TypeSynonymInstances, FlexibleInstances, DeriveFunctor #-}
 module Math.Algebra.Polynomial.Misc where
@@ -9,6 +9,7 @@ module Math.Algebra.Polynomial.Misc where
 import Data.List
 import Data.Monoid
 import Data.Ratio
+import Data.Array
 
 -- Semigroup became a superclass of Monoid
 #if MIN_VERSION_base(4,11,0)     
@@ -271,6 +272,28 @@ tuples' (s:ss) = [ x:xs | x <- [0..s] , xs <- tuples' ss ]
 sublists :: [a] -> [[a]]
 sublists [] = [[]]
 sublists (x:xs) = sublists xs ++ map (x:) (sublists xs)  
+
+--------------------------------------------------------------------------------
+-- * Integer-indexed cache
+
+intCache :: ((Int -> a) -> (Int -> a)) -> (Int -> a)
+intCache compute = cached where
+  cached n = lkpITable n table
+  table    = mkITable (map (compute cached) [0..])
+  
+newtype ITable a = ITable [Array Int a] 
+
+mkITable :: [a] -> ITable a
+mkITable = ITable . go 1 where
+  go !siz list = arr : go (2*siz) rest where
+    (this,rest) = splitAt siz list
+    arr = listArray (0,siz-1) this
+
+lkpITable :: Int -> ITable a -> a        
+lkpITable idx (ITable list) = go 1 idx list where
+  go !siz !idx (this:rest) = if idx < siz
+    then (this ! idx)
+    else go (2*siz) (idx-siz) rest
 
 --------------------------------------------------------------------------------
 

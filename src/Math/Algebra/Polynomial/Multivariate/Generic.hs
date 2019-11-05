@@ -43,6 +43,19 @@ instance Ord v => FreeModule (Poly c v) where
 
 --------------------------------------------------------------------------------
 
+type ZPoly = Poly Integer
+type QPoly = Poly Rational
+
+-- | Change the coefficient ring (from integers)
+fromZPoly :: (Ring c, Variable v) => Poly Integer v -> Poly c v 
+fromZPoly= Poly . ZMod.fromZMod . unPoly
+
+-- | Change the coefficient ring (from rationals)
+fromQPoly :: (Field c, Variable v) => Poly Rational v -> Poly c v 
+fromQPoly = Poly . ZMod.fromQMod . unPoly
+
+--------------------------------------------------------------------------------
+
 instance (Ring c, Ord v, Pretty v) => AlmostPolynomial (Poly c v) where
   type CoeffP (Poly c v) = c
   type MonomP (Poly c v) = Monom v
@@ -96,7 +109,7 @@ instance IsSigned (Poly c v) where
   signOf = const (Just Plus)
 
 -- So that we can use it again as a coefficient ring
-instance (Ring c, Ord v, Show v, Pretty v) => Ring (Poly c v) where
+instance (Ring c, Variable v) => Ring (Poly c v) where
   isZeroR   = ZMod.isZero . unPoly
   isAtomicR = const False
   isSignedR = const False

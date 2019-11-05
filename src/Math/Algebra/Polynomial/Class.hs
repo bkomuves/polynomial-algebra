@@ -1,10 +1,15 @@
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies, TypeSynonymInstances, FlexibleInstances, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE 
+      FlexibleContexts, TypeFamilies, TypeSynonymInstances, FlexibleInstances, 
+      GeneralizedNewtypeDeriving, ConstraintKinds
+  #-}
+
 module Math.Algebra.Polynomial.Class where
 
 --------------------------------------------------------------------------------
 
 import Data.List ( foldl' , foldl1' , maximum , null )
+import Data.Typeable
 import Data.Proxy
 
 import Math.Algebra.Polynomial.Misc
@@ -36,7 +41,7 @@ instance Pretty Index where
 -- about some things (mainly for pretty-printing purposes
 --
 -- TODO: clean this up!
-class (Eq c, Ord c, Num c, IsSigned c, Show c, Pretty c) => Ring c where
+class (Eq c, Ord c, Num c, IsSigned c, Show c, Pretty c, Typeable c) => Ring c where
   isZeroR   :: c -> Bool
   signumR   :: c -> Maybe Sign
   absR      :: c -> c
@@ -49,8 +54,18 @@ class (Eq c, Ord c, Num c, IsSigned c, Show c, Pretty c) => Ring c where
   isSignedR = const True
   isAtomicR = const True
 
+instance Ring Int
 instance Ring Integer
 instance Ring Rational
+
+-- | The class of coefficient fields (this is just a constraint synonym for now)
+type Field c = (Ring c, Fractional c)
+
+--------------------------------------------------------------------------------
+
+-- | The class of types whose inhabitants can serve as variables
+-- (this is just a constraint synonym for now)
+type Variable v = (Ord v, Show v, Pretty v, Typeable v)
 
 --------------------------------------------------------------------------------
 -- * Monomials
@@ -107,7 +122,7 @@ proxyVarM _ = Proxy
 -- * Polynomial rings
 
 -- | The class of almost polynomial rings
-class (Pretty p, Num p, Ring (CoeffP p), FreeModule p, CoeffP p ~ CoeffF p, MonomP p ~ BaseF p) => AlmostPolynomial p where
+class (Pretty p, Ring (CoeffP p), FreeModule p, CoeffP p ~ CoeffF p, MonomP p ~ BaseF p) => AlmostPolynomial p where
 
   -- | Type of coefficients
   type CoeffP p :: *
@@ -142,14 +157,13 @@ class (Pretty p, Num p, Ring (CoeffP p), FreeModule p, CoeffP p ~ CoeffF p, Mono
   scaleP        :: CoeffP p -> p -> p 
 
   -- default implementations
-
   sumP     ps = case ps of { [] -> zeroP ; _ -> foldl1' addP ps }
   productP ps = case ps of { [] -> oneP  ; _ -> foldl1' mulP ps }
 
 --------------------------------------------------------------------------------
 
 -- | The class of polynomial rings
-class (AlmostPolynomial p, Monomial (MonomP p), VarM (MonomP p) ~ VarP p) => Polynomial p where
+class (AlmostPolynomial p, Num p, Monomial (MonomP p), VarM (MonomP p) ~ VarP p) => Polynomial p where
 
   evalP         :: Num d => (CoeffP p -> d) -> (VarP p -> d) -> p -> d
   varSubsP      :: (VarP p -> VarP p) -> p -> p

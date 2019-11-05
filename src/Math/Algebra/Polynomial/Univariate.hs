@@ -5,7 +5,7 @@
 module Math.Algebra.Polynomial.Univariate
   ( -- * Univariate polynomials
     Univariate(..) , unUni , uniVar , renameUniVar
-  , ZUni , QUni
+  , ZUni , QUni , fromZUni , fromQUni
   , U(..)
   )
   where
@@ -39,12 +39,6 @@ newtype Univariate (coeff :: *) (var :: Symbol) = Uni (FreeMod coeff (U var))
 unUni :: Univariate c v -> FreeMod c (U v)
 unUni (Uni a) = a
 
--- | An univariate polynomial integer coefficients
-type ZUni var = Univariate Integer var
-
--- | An univariate polynomial with rational coefficients
-type QUni var = Univariate Rational var
-
 instance FreeModule (Univariate c v) where
   type BaseF  (Univariate c v) = U v 
   type CoeffF (Univariate c v) = c
@@ -57,8 +51,25 @@ uniVar = symbolVal . varProxy where
   varProxy :: Univariate c var -> Proxy var
   varProxy _ = Proxy
 
+-- | Rename the variable (zero cost)
 renameUniVar :: Univariate c var1 -> Univariate c var2
 renameUniVar = Unsafe.unsafeCoerce
+
+--------------------------------------------------------------------------------
+
+-- | An univariate polynomial integer coefficients
+type ZUni var = Univariate Integer var
+
+-- | An univariate polynomial with rational coefficients
+type QUni var = Univariate Rational var
+
+-- | Change the coefficient ring
+fromZUni :: (Ring c, KnownSymbol v) => Univariate Integer v -> Univariate c v 
+fromZUni = Uni . ZMod.fromZMod . unUni
+
+-- | Change the coefficient ring
+fromQUni :: (Field c, KnownSymbol v) => Univariate Rational v -> Univariate c v 
+fromQUni = Uni . ZMod.fromQMod . unUni
 
 --------------------------------------------------------------------------------
 

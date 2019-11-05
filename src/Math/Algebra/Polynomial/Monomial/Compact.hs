@@ -53,9 +53,8 @@ newtype Compact (var :: Symbol) (n :: Nat) = Compact ByteArray deriving (Eq,Show
 
 --------------------------------------------------------------------------------
 
--- because of how we encode it (list of exponents), the opposite order 
--- seems more natural for printing out terms (?)
-instance Ord (Compact var n) where compare (Compact a) (Compact b) = compare b a
+-- note: this must be a monomial ordering!
+instance Ord (Compact var n) where compare (Compact a) (Compact b) = compare a b
 
 instance KnownNat n => Semigroup (Compact var n) where
   (<>) = mulCompact
@@ -229,6 +228,10 @@ instance (KnownNat n, KnownSymbol v) => Monomial (Compact v n) where
   powM       = powCompact
   maxDegM    = maxDegCompact              
   totalDegM  = totalDegCompact
+ 
+  evalM      = error "Compact/evalM: not yet implemented"
+  varSubsM   = error "Compact/varSubsM: not yet implemented"
+  termSubsM  = error "Compact/termSubsM: not yet implemented"
 
 --------------------------------------------------------------------------------
 -- * ByteArray helpers

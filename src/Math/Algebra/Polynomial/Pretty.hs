@@ -44,6 +44,9 @@ instance (Num c, Eq c, Pretty c, IsSigned c, Pretty b) => Pretty (FreeMod c b) w
 
 --------------------------------------------------------------------------------
 
+instance Pretty Int where
+  pretty = show
+
 instance Pretty Integer where
   pretty = show
 

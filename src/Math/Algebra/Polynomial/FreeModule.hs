@@ -55,7 +55,7 @@ class (Ord (BaseF a)) => FreeModule a where
   type CoeffF a :: *
   toFreeModule   :: a -> FreeMod (CoeffF a) (BaseF a)
   fromFreeModule :: FreeMod (CoeffF a) (BaseF a) -> a
-
+  
 instance Ord b => FreeModule (FreeMod c b) where
   type BaseF  (FreeMod c b) = b
   type CoeffF (FreeMod c b) = c

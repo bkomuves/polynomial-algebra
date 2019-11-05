@@ -36,6 +36,7 @@ Library
                        Math.Algebra.Polynomial.Univariate.Pochhammer
                        Math.Algebra.Polynomial.Univariate.Lagrange
                        Math.Algebra.Polynomial.Univariate.Cyclotomic
+                       Math.Algebra.Polynomial.Univariate.Chebysev
                        Math.Algebra.Polynomial.Multivariate.Generic
                        Math.Algebra.Polynomial.Multivariate.Compact
                        Math.Algebra.Polynomial.Multivariate.Indexed

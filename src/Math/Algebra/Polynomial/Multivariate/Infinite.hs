@@ -9,7 +9,7 @@
 module Math.Algebra.Polynomial.Multivariate.Infinite
   (
     Poly(..) , unPoly , polyVar , renamePolyVar
-  , ZPoly , QPoly
+  , ZPoly , QPoly , fromZPoly, fromQPoly
   , truncate
   , XInf(..)
   )
@@ -76,6 +76,14 @@ renamePolyVar = Unsafe.unsafeCoerce
 
 type ZPoly = Poly Integer
 type QPoly = Poly Rational
+
+-- | Change the coefficient ring (from integers)
+fromZPoly :: (Ring c, KnownSymbol v) => Poly Integer v -> Poly c v 
+fromZPoly= Poly . ZMod.fromZMod . unPoly
+
+-- | Change the coefficient field (from rationals)
+fromQPoly :: (Field c, KnownSymbol v) => Poly Rational v -> Poly c v 
+fromQPoly = Poly . ZMod.fromQMod . unPoly
 
 --------------------------------------------------------------------------------
 

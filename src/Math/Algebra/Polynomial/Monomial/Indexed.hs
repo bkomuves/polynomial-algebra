@@ -42,9 +42,8 @@ import Math.Algebra.Polynomial.Misc
 -- Note that we require here that the array has bounds @(1,n)@
 newtype XS (var :: Symbol) (n :: Nat) = XS (UArray Int Int) deriving (Eq,Show,Typeable)
 
--- because of how we encode it (list of exponents), the opposite order 
--- seems more natural for printing out terms (?)
-instance Ord (XS var n) where compare (XS a) (XS b) = compare b a
+-- | Note: this must be a monomial ordering!
+instance Ord (XS var n) where compare (XS a) (XS b) = compare a b
 
 instance KnownNat n => Semigroup (XS var n) where
   (<>) = mulXS
