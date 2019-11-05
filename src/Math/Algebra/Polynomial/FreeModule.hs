@@ -425,7 +425,9 @@ mapMaybeBaseCoeff f
   = normalize      -- it can happen that we merge a (-1) and (+1) for example ...
   . onFreeMod (Map.fromListWith (+) . mapMaybe g . Map.toList)
   where
-    g (k,x) = case f k of { Just (k',y) -> Just (k',x*y) ; Nothing -> Nothing }
+    g (k,x) = case f k of 
+        Just (k',y) -> let z = x*y in if z/=0 then Just (k',z) else Nothing
+        Nothing     -> Nothing 
 
 -- | NOTE: This is UNSAFE! The user must guarantee that the map respects the invariants!
 onFreeMod :: (Ord a, Ord b) => (Map a c -> Map b c) -> FreeMod c a -> FreeMod c b
