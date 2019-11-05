@@ -4,9 +4,9 @@
 {-# LANGUAGE BangPatterns, DataKinds, KindSignatures, GeneralizedNewtypeDeriving, TypeFamilies #-}
 module Math.Algebra.Polynomial.Univariate
   ( -- * Univariate polynomials
-    Univariate(..) , unUni , uniVar , renameUniVar
+    Univariate(..) ,  U(..) , unUni , uniVar , renameUniVar
   , ZUni , QUni , fromZUni , fromQUni
-  , U(..)
+  , differentiateUni , integrateUni , integrateUni'
   )
   where
 
@@ -70,6 +70,23 @@ fromZUni = Uni . ZMod.fromZMod . unUni
 -- | Change the coefficient ring
 fromQUni :: (Field c, KnownSymbol v) => Univariate Rational v -> Univariate c v 
 fromQUni = Uni . ZMod.fromQMod . unUni
+
+--------------------------------------------------------------------------------
+
+-- | Differentiation
+differentiateUni :: (Ring c, KnownSymbol var) => Univariate c var -> Univariate c var
+differentiateUni = Uni . ZMod.mapMaybeBaseCoeff f . unUni where
+  f (U k) = case k of
+    0 -> Nothing
+    _ -> Just ( U (k-1) , fromIntegral k )
+
+-- | Integration
+integrateUni :: (Field c, KnownSymbol var) => Univariate c var -> Univariate c var
+integrateUni = Uni . ZMod.mapMaybeBaseCoeff f . unUni where
+  f (U k) = Just ( U (k+1) , 1 / fromIntegral (k+1) )
+
+integrateUni' :: (Field c, KnownSymbol var) => c -> Univariate c var -> Univariate c var
+integrateUni' c0 p = integrateUni p + scalarP c0
 
 --------------------------------------------------------------------------------
 
