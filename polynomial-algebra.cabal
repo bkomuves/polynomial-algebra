@@ -39,6 +39,7 @@ Library
                        Math.Algebra.Polynomial.Univariate.Chebysev
                        Math.Algebra.Polynomial.Univariate.Hermite
                        Math.Algebra.Polynomial.Univariate.Legendre
+                       Math.Algebra.Polynomial.Univariate.Bernoulli
                        Math.Algebra.Polynomial.Multivariate.Generic
                        Math.Algebra.Polynomial.Multivariate.Compact
                        Math.Algebra.Polynomial.Multivariate.Indexed

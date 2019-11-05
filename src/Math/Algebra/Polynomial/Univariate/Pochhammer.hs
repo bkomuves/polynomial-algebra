@@ -15,9 +15,8 @@ import Data.Typeable
 import GHC.TypeLits
 import Data.Proxy
 
--- import Math.Combinat.Numbers
-
 import Math.Algebra.Polynomial.Pretty
+import Math.Algebra.Polynomial.Misc
 
 import qualified Math.Algebra.Polynomial.FreeModule as ZMod
 import Math.Algebra.Polynomial.FreeModule ( FreeMod , ZMod , QMod )
@@ -83,23 +82,5 @@ expandRisingFactorialZ (RF k) = Uni $ ZMod.fromList
 expandFallingFactorialZ :: FallingF -> Univariate Integer var
 expandFallingFactorialZ (FF k) = Uni $ ZMod.fromList
   [ (U p,     c) | (p,c) <- assocs (signedStirling1stArray k) ]
-
---------------------------------------------------------------------------------
--- * Stirling numbers
-
--- | Rows of (signed) Stirling numbers of the first kind. OEIS:A008275.
--- Coefficients of the polinomial @(x-1)*(x-2)*...*(x-n+1)@.
--- This function uses the recursion formula.
-signedStirling1stArray :: Integral a => a -> Array Int Integer
-signedStirling1stArray n
-  | n <  1    = error "stirling1stArray: n should be at least 1"
-  | n == 1    = listArray (1,1 ) [1]
-  | otherwise = listArray (1,n') [ lkp (k-1) - fromIntegral (n-1) * lkp k | k<-[1..n'] ] 
-  where
-    prev = signedStirling1stArray (n-1)
-    n' = fromIntegral n :: Int
-    lkp j | j <  1    = 0
-          | j >= n'   = 0
-          | otherwise = prev ! j 
 
 --------------------------------------------------------------------------------

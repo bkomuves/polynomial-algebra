@@ -113,6 +113,10 @@ productOfSigns = go Plus where
     Plus  -> go acc xs
     Minus -> go (oppositeSign acc) xs
 
+-- | Negate the second argument if the first is odd
+negateIfOdd :: (Integral a, Num b) => a -> b -> b
+negateIfOdd k y = if even k then y else negate y
+
 --------------------------------------------------------------------------------
 
 -- Semigroup became a superclass of Monoid
@@ -183,6 +187,24 @@ safeDiv a b = case divMod a b of
 
 --------------------------------------------------------------------------------
 -- * Basic number theory
+
+-- | A000142.
+factorial :: Integral a => a -> Integer
+factorial n
+  | n <  0    = error "factorial: input should be nonnegative"
+  | n == 0    = 1
+  | otherwise = product [1..fromIntegral n]
+
+-- | A007318. Note: This is zero for @n<0@ or @k<0@; see also 'signedBinomial' below.
+binomial :: Integral a => a -> a -> Integer
+binomial n k 
+  | k > n = 0
+  | k < 0 = 0
+  | k > (n `div` 2) = binomial n (n-k)
+  | otherwise = (product [n'-k'+1 .. n']) `div` (product [1..k'])
+  where 
+    k' = fromIntegral k
+    n' = fromIntegral n
 
 moebiusMu :: Num c => Int -> c
 moebiusMu n 
@@ -296,4 +318,34 @@ lkpITable idx (ITable list) = go 1 idx list where
     else go (2*siz) (idx-siz) rest
 
 --------------------------------------------------------------------------------
+-- * Stirling numbers
 
+-- | Rows of (signed) Stirling numbers of the first kind. OEIS:A008275.
+-- Coefficients of the polinomial @(x-1)*(x-2)*...*(x-n+1)@.
+-- This function uses the recursion formula.
+signedStirling1stArray :: Integral a => a -> Array Int Integer
+signedStirling1stArray n
+  | n <  1    = error "stirling1stArray: n should be at least 1"
+  | n == 1    = listArray (1,1 ) [1]
+  | otherwise = listArray (1,n') [ lkp (k-1) - fromIntegral (n-1) * lkp k | k<-[1..n'] ] 
+  where
+    prev = signedStirling1stArray (n-1)
+    n' = fromIntegral n :: Int
+    lkp j | j <  1    = 0
+          | j >= n'   = 0
+          | otherwise = prev ! j 
+
+-- | Stirling numbers of the second kind. OEIS:A008277.
+-- This function uses an explicit formula.
+-- 
+-- Argument order: @stirling2nd n k@
+--
+stirling2nd :: Integral a => a -> a -> Integer
+stirling2nd n k 
+  | k==0 && n==0 = 1
+  | k < 1        = 0
+  | k > n        = 0
+  | otherwise = sum xs `div` factorial k where
+      xs = [ negateIfOdd (k-i) $ binomial k i * (fromIntegral i)^n | i<-[0..k] ]
+
+--------------------------------------------------------------------------------
