@@ -1,14 +1,11 @@
 
 -- | Multivariate compact polynomials where the variable set 
--- looks like @{x_1, x_2, ... , x_N}@, and the exponents are 
--- a priori known to be at most 255.  
+-- looks like @{x_1, x_2, ... , x_N}@.
 --
 -- This is very similar to the \"Indexed\" version, but should have much more
 -- compact in-memory representation (which is useful in case of large or many 
--- polynomials; and should be in theory also faster, because of cache issues)
+-- polynomials; and should be in theory also faster, because of cache-friendlyness)
 --
--- WARNING! There are no checks on the exponents, the user should ensure
--- that they indeed never exceed 255!
 --
 
 {-# LANGUAGE BangPatterns, TypeFamilies, DataKinds, KindSignatures, ScopedTypeVariables, FlexibleContexts #-}
@@ -23,8 +20,6 @@ module Math.Algebra.Polynomial.Multivariate.Compact
 
 import Data.List
 import Data.Word
-import Data.Array.Unboxed       -- used by `compactFromList' only
-import Data.Primitive.ByteArray
 
 import Data.Typeable
 import GHC.TypeLits

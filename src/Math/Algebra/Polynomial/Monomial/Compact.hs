@@ -1,14 +1,10 @@
 
 -- | Multivariate compact monomials where the variable set 
--- looks like @{x_1, x_2, ... , x_N}@, and the exponents are 
--- a priori known to be at most 255.  
+-- looks like @{x_1, x_2, ... , x_N}@. 
 --
 -- This is very similar to the \"Indexed\" version, but should have much more
 -- compact in-memory representation (which is useful in case of large or many 
--- polynomials,  and should be in theory also faster, because of cache issues)
---
--- WARNING! There are no checks on the exponents, the user should ensure
--- that they indeed never exceed 255!
+-- polynomials, and should be in theory also faster, because of cache friendlyness)
 --
 
 {-# LANGUAGE CPP, BangPatterns, TypeFamilies, DataKinds, KindSignatures, ScopedTypeVariables #-}
@@ -18,8 +14,8 @@ module Math.Algebra.Polynomial.Monomial.Compact where
 
 import Data.List
 import Data.Word
-import Data.Array.Unboxed       -- used by `compactFromList' only
-import Data.Primitive.ByteArray
+
+import Data.Array.Unboxed  -- used only by compactFromList
 
 #if MIN_VERSION_base(4,11,0)        
 import Data.Semigroup
@@ -34,6 +30,8 @@ import Data.Proxy
 
 import Data.Foldable as F 
 
+import qualified Data.Vector.Compact.WordVec as V
+
 import Math.Algebra.Polynomial.Class
 import Math.Algebra.Polynomial.Pretty
 import Math.Algebra.Polynomial.Misc
@@ -44,17 +42,20 @@ import Math.Algebra.Polynomial.Monomial.Indexed ( XS , xsFromExponents , xsToExp
 -- * Monomials
 
 -- | Monomials of the variables @x1,x2,...,xn@. The internal representation is a
--- dense byte array of the exponents.
+-- compact vector of the exponents.
 --
 -- The type is indexed by the /name/ of the variables, and then the /number/ of variables.
 --
--- Note that we assume here that the internal ByteArray has length @n@.
-newtype Compact (var :: Symbol) (n :: Nat) = Compact ByteArray deriving (Eq,Show,Typeable)
+-- Note that we assume here that the internal vector has length @n@.
+newtype Compact (var :: Symbol) (n :: Nat) 
+  = Compact V.WordVec 
+  deriving (Eq,Show,Typeable)
 
 --------------------------------------------------------------------------------
 
 -- note: this must be a monomial ordering!
-instance Ord (Compact var n) where compare (Compact a) (Compact b) = compare a b
+instance Ord (Compact var n) where 
+  compare (Compact a) (Compact b) = compare a b
 
 instance KnownNat n => Semigroup (Compact var n) where
   (<>) = mulCompact
@@ -69,7 +70,7 @@ instance KnownSymbol var => Pretty (Compact var n) where
       [] -> "(1)"
       xs -> intercalate "*" xs
     where
-      es = compactToExpoListW8 monom
+      es = compactToWordExpoList monom
       v  = compactVar monom
       showXPow !i !e = case e of
         0 -> "1"
@@ -88,54 +89,46 @@ nOfCompact = fromInteger . natVal . natProxy where
   natProxy :: Compact var n -> Proxy n
   natProxy _ = Proxy
 
-{-
--- | Number of variables
-nOfZModCompact :: KnownNat n => FreeMod c (Compact var n) -> Int
-nOfZModCompact = fromInteger . natVal . natProxy where
-  natProxy :: FreeMod c (Compact var n) -> Proxy n
-  natProxy _ = Proxy
--}
-
 --------------------------------------------------------------------------------
 -- * Conversion
 
 -- | from @(variable,exponent)@ pairs
 compactFromList :: KnownNat n => [(Index,Int)] -> Compact v n
 compactFromList list = xs where
-  xs  = Compact $ byteArrayFromListN n (elems arr)
-  arr = accumArray (+) 0 (1,n) list' :: UArray Int Word8
+  xs  = Compact $ V.fromList {- n -} (elems arr)
+  arr = accumArray (+) 0 (1,n) list' :: UArray Int Word
   n   = nOfCompact xs
-  list' = map f list :: [(Int,Word8)]
+  list' = map f list :: [(Int,Word)]
   f (Index j , e)
     | j < 1      = error "compactFromList: index out of bounds (too small)"
     | j > n      = error "compactFromList: index out of bounds (too big)"
     | e < 0      = error "compactFromList: negative exponent"
-    | e > 255    = error "compactFromList: exponent too big (should be at most 255)"
     | otherwise  = (j,fromIntegral e)
   
 -- | to @(variable,exponent)@ pairs
 compactToList :: Compact v n -> [(Index,Int)]
-compactToList (Compact ba) = zipWith f [1..] (byteArrayToList ba) where
+compactToList (Compact vec) = filter cond $ zipWith f [1..] (V.toList vec) where
   f j e = (Index j, fromIntegral e)
+  cond (_,e) = e > 0
 
--- | from 'Word8' exponent list
-compactFromExpoListW8 :: KnownNat n => [Word8] -> Compact var n
-compactFromExpoListW8 ws = cpt where
-  cpt = Compact ba
+-- | from @Word@ exponent list
+compactFromWordExpoList :: KnownNat n => [Word] -> Compact var n
+compactFromWordExpoList ws = cpt where
   n   = nOfCompact cpt
-  ba  = byteArrayFromListN n (take n (ws ++ repeat 0))
+  cpt = Compact vec
+  vec = V.fromList {- n -} (take n (ws ++ repeat 0))
 
--- | to 'Word8' exponent list
-compactToExpoListW8 :: Compact var n -> [Word8]
-compactToExpoListW8 (Compact ba) = byteArrayToList ba
+-- | to @Word@ exponent list
+compactToWordExpoList :: Compact var n -> [Word]
+compactToWordExpoList (Compact vec) = V.toList vec
 
 -- | from @Int@ exponent list
 compactFromExponents :: KnownNat n => [Int] -> Compact v n
-compactFromExponents = compactFromExpoListW8 . map fromIntegral
+compactFromExponents = compactFromWordExpoList . map fromIntegral
 
 -- | to @Int@ exponent list
 compactToExponents :: KnownNat n => Compact v n -> [Int]
-compactToExponents = map fromIntegral . compactToExpoListW8
+compactToExponents = map fromIntegral . compactToWordExpoList
 
 -- | from 'XS' exponent list
 compactFromXS :: KnownNat n => XS v n -> Compact v n 
@@ -150,17 +143,18 @@ compactToXS = xsFromExponents . compactToExponents
 
 emptyCompact :: KnownNat n => Compact v n
 emptyCompact = xs where 
-  xs = Compact $ byteArrayFromListN n (replicate n (0::Word8))
+  xs = Compact $ V.fromList' (V.Shape n 4) (replicate n (0::Word))
   n  = nOfCompact xs
 
 isEmptyCompact :: Compact v n -> Bool
-isEmptyCompact monom = all (==0) (compactToExpoListW8 monom)
+isEmptyCompact monom@(Compact vec) = (V.maximum vec == 0)
+  -- all (==0) (compactToWordExpoList monom)
 
 --------------------------------------------------------------------------------
 -- * normalization
 
 isNormalCompact :: KnownNat n => Compact v n -> Bool
-isNormalCompact cpt@(Compact ba) = nOfCompact cpt == sizeofByteArray ba
+isNormalCompact cpt@(Compact vec) = nOfCompact cpt == V.vecLen vec
 
 --------------------------------------------------------------------------------
 -- * creation
@@ -169,50 +163,51 @@ variableCompact :: KnownNat n => Index -> Compact v n
 variableCompact idx = singletonCompact idx 1
 
 singletonCompact :: KnownNat n => Index -> Int -> Compact v n 
-singletonCompact (Index j) e 
+singletonCompact (Index j) e0
   | j < 1     = error "singletonCompact: index out of bounds (too small)"
   | j > n     = error "singletonCompact: index out of bounds (too big)"
   | e < 0     = error "singletonCompact: negative exponent"
-  | e > 255   = error "singletonCompact: exponent too big (should be at most 255)"
   | otherwise = cpt
   where
-    list = replicate j 0 ++ (fromIntegral e :: Word8) : replicate (n-j-1) 0
+    e    = fromIntegral e0 :: Word
+    list = replicate (j-1) 0 ++ e : replicate (n-j) 0
     n    = nOfCompact cpt
-    cpt  = Compact $ byteArrayFromListN n list
+    cpt  = Compact $ V.fromList' (V.Shape n (V.bitsNeededFor e)) list
 
 --------------------------------------------------------------------------------
 -- * products
 
 mulCompact :: KnownNat n => Compact v n -> Compact v n -> Compact v n
-mulCompact (Compact ba1) (Compact ba2) = Compact (addByteArrays ba1 ba2) 
+mulCompact (Compact vec1) (Compact vec2) = Compact $ V.add vec1 vec2
 
 productCompact :: (KnownNat n, Foldable f) => f (Compact v n) -> Compact v n
 productCompact = F.foldl' mulCompact emptyCompact 
 
 powCompact :: KnownNat n => Compact v n -> Int -> Compact v n
-powCompact (Compact ba) e 
+powCompact (Compact vec) e 
   | e < 0     = error "powCompact: negative exponent"
   | e == 0    = emptyCompact
-  | otherwise = Compact $ mapByteArray (*e8) ba where e8 = (fromIntegral e :: Word8)
-
+  | otherwise = Compact $ V.scale (fromIntegral e) vec
+  
 divCompact :: KnownNat n => Compact v n -> Compact v n -> Maybe (Compact v n)
-divCompact (Compact ba1) (Compact ba2) = 
-  if pwGEByteArrays ba1 ba2 
-    then Just $ Compact (subByteArrays ba1 ba2) 
-    else Nothing
+divCompact (Compact vec1) (Compact vec2) = Compact <$> V.subtract vec1 vec2
 
 --------------------------------------------------------------------------------
 -- * degree
 
 maxDegCompact :: Compact v n -> Int
-maxDegCompact (Compact ba) = fromIntegral (maxByteArray ba)
+maxDegCompact (Compact vec) = fromIntegral (V.maximum vec)
 
 totalDegCompact :: Compact v n -> Int
-totalDegCompact (Compact ba) = sumByteArray ba
+totalDegCompact (Compact vec) = fromIntegral (V.sum vec)
 
 --------------------------------------------------------------------------------
 -- * differentiation
 
+diffCompact :: Num c => Index -> Int -> Compact v n -> Maybe (Compact v n, c)
+diffCompact = error "diffCompact: not implemented yet"
+
+{-
 diffCompact :: Num c => Index -> Int -> Compact v n -> Maybe (Compact v n, c)
 diffCompact _         0 cpt          = Just (cpt,1)
 diffCompact (Index j) k (Compact ba) =
@@ -228,6 +223,7 @@ diffCompact (Index j) k (Compact ba) =
     change = go 1 where
       go i (x:xs) = if i == j then (x-k8) : xs else x : go (i+1) xs
       go i []     = [] 
+-}
 
 --------------------------------------------------------------------------------
 
@@ -252,44 +248,5 @@ instance (KnownNat n, KnownSymbol v) => Monomial (Compact v n) where
   evalM      = error "Compact/evalM: not yet implemented"
   varSubsM   = error "Compact/varSubsM: not yet implemented"
   termSubsM  = error "Compact/termSubsM: not yet implemented"
-
---------------------------------------------------------------------------------
--- * ByteArray helpers
-
-byteArrayToList :: ByteArray -> [Word8]
-byteArrayToList ba = [ indexByteArray ba i | i<-[0..n-1] ] where
-  n = sizeofByteArray ba
-
-mapByteArray :: (Word8 -> Word8) -> ByteArray -> ByteArray
-mapByteArray f ba = byteArrayFromListN n (map f $ byteArrayToList ba) where
-  n = sizeofByteArray ba
-
--- | We assume that the lengths are the same!
-addByteArrays :: ByteArray -> ByteArray -> ByteArray 
-addByteArrays ba1 ba2 = ba3 where
-  ba3 = byteArrayFromListN n 
-          [ indexByteArray ba1 i + (indexByteArray ba2 i :: Word8) | i<-[0..n-1] ]
-  n = sizeofByteArray ba1
-
--- | We assume that the lengths are the same!
-subByteArrays :: ByteArray -> ByteArray -> ByteArray 
-subByteArrays ba1 ba2 = ba3 where
-  ba3 = byteArrayFromListN n 
-          [ indexByteArray ba1 i - (indexByteArray ba2 i :: Word8) | i<-[0..n-1] ]
-  n = sizeofByteArray ba1
-
--- | Pointwise greater-or-equal (we assume that the lengths are the same!)
-pwGEByteArrays :: ByteArray -> ByteArray -> Bool 
-pwGEByteArrays ba1 ba2 = and list where
-  list = [ indexByteArray ba1 i >= (indexByteArray ba2 i :: Word8) | i<-[0..n-1] ]
-  n = sizeofByteArray ba1
-
-maxByteArray :: ByteArray -> Word8
-maxByteArray = foldrByteArray (max :: Word8 -> Word8 -> Word8) 0 
-
-sumByteArray :: ByteArray -> Int 
-sumByteArray = foldrByteArray f 0 where
-  f :: Word8 -> Int -> Int
-  f w i = i + (fromIntegral w :: Int)
 
 --------------------------------------------------------------------------------
