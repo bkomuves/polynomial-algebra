@@ -1,4 +1,3 @@
-
 polynomial-algebra Haskell library
 ==================================
 
