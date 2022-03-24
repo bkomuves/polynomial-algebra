@@ -1,17 +1,17 @@
 cabal-version:        2.4
 Name:                 polynomial-algebra
-Version:              0.1
+Version:              0.1.0.1
 Synopsis:             Multivariate polynomial rings
 Description:          Multivariate and univariate polynomial rings, with several different representations
 License:              BSD-3-Clause
 License-file:         LICENSE
 Author:               Balazs Komuves
-Copyright:            (c) 2018-2019 Balazs Komuves
+Copyright:            (c) 2018-2022 Balazs Komuves
 Maintainer:           bkomuves (plus) hackage (at) gmail (dot) com
 Homepage:             https://github.com/bkomuves/polynomial-algebra
 Stability:            Experimental
 Category:             Math
-Tested-With:          GHC == 8.6.5
+Tested-With:          GHC == 8.6.5, GHC == 9.0.1
 Build-Type:           Simple
 
 extra-source-files:   README.md
